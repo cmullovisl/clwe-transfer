@@ -1,0 +1,7 @@
+# this is a config file in bash syntax
+baselanguages=(en de es fr it)
+newlanguages=(pt ru)
+clwepivot=en
+embdim=300
+trainconfig="train-base"
+model="continuous"
