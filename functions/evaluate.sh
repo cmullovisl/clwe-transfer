@@ -10,10 +10,9 @@ translate() {
     tgt="$3"
     dset="$4"
 
-    #SAVEDIR="saves.$stage"
-    evaldir="$savedir/evaldata"
-    #modeldir="$SAVEDIR/models/$model"
-    #outdir="$SAVEDIR/translations/$model"
+    #savedir="saves.$stage"
+    #modeldir="$savedir/models/$model"
+    #outdir="$savedir/translations/$model"
 
     GPU=0
     beamsize=1
@@ -30,7 +29,7 @@ translate() {
         -src "$evaldir/$dset.$src-$tgt.$src" \
         -output "$translationsdir/$dset.$src-$tgt.$tgt.pred" \
         -new_vocab "$vocabdir/vocab.$dset.$src-$tgt.pt"
-        #-new_vocab "$SAVEDIR/data.vocab.$tgt.pt"
+        #-new_vocab "$savedir/data.vocab.$tgt.pt"
         #-model "$modeldir/$m" \
 }
 
@@ -45,9 +44,8 @@ calculate_bleu() {
     tgt="$2"
     dset="$3"
 
-    #SAVEDIR="saves.$stage"
-    #translationsdir="$SAVEDIR/translations/$modelname"
-    evaldir="$savedir/evaldata"
+    #savedir="saves.$stage"
+    #translationsdir="$savedir/translations/$modelname"
 
     export LC_CTYPE=en_US.UTF-8
     export LC_ALL=en_US.UTF-8

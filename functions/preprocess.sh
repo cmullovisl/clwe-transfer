@@ -42,8 +42,8 @@ preprocess() {
     #vocablines=$(wc -l < "$word_embeddings")
 
     # TODO move this into run.sh?
-    SAVEDIR="$savedir/saves.$stage"
-    mkdir -p "$SAVEDIR"
+    savedir="$projectroot/saves.$stage"
+    mkdir -p "$savedir"
 
     python -u "$onmt"/preprocess.py \
         -train_src "$datadir/corpus.$stage.src" \
@@ -52,7 +52,7 @@ preprocess() {
         -valid_tgt "$datadir/dev.$stage.tgt" \
         -src_vocab "$datadir/vocab.$stage.$dset.txt" \
         -tgt_vocab "$datadir/vocab.$stage.$dset.txt" \
-        -save_data "$SAVEDIR/data" \
+        -save_data "$savedir/data" \
         -tgt_emb "$datadir/embeddings.$stage.$dset.vec" \
         -src_vocab_size 1000000 \
         -tgt_vocab_size 1000000 \
@@ -66,9 +66,6 @@ preprocess() {
 preprocess_evaluation_data() {
     sourcelanguages="$1"
     targetlanguages="$2"
-
-    data_in="$basedir/data"
-    #evaldir="..."
 
     for dset in dev test; do
         for src in $sourcelanguages; do
