@@ -36,11 +36,6 @@ preprocess() {
     stage="$1"
     dset=train
 
-    #special_embeddings="$datadir/specials.vec"
-    #word_embeddings="$datadir/embeddings.$stage.$dset.vec"
-    #speciallines=$(wc -l < "$special_embeddings")
-    #vocablines=$(wc -l < "$word_embeddings")
-
     # TODO move this into run.sh?
     savedir="$projectroot/saves.$stage"
     mkdir -p "$savedir"
@@ -58,9 +53,6 @@ preprocess() {
         -tgt_vocab_size 1000000 \
         -src_seq_length 100 \
         -tgt_seq_length 100 |& tee $logdir/preprocess.log
-
-        # for use with separate specials and embeddings .vec files
-        #-tgt_emb <(echo "$((speciallines + vocablines)) $embdim"; cat "$special_embeddings" "$word_embeddings") \
 }
 
 preprocess_evaluation_data() {
@@ -77,18 +69,6 @@ preprocess_evaluation_data() {
 
                 "$SCRIPT_DIR"/scripts/preprocess/purge-empty-lines.sh "" \
                     "$evaldir/$dset.$src-$tgt.$src" "$evaldir/$dset.$src-$tgt.$tgt"
-
-                #cat $data_in/dev.$src-$tgt.$src | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g"  > $evaldir/dev.$src-$tgt.$src
-                #cat $data_in/dev.$src-$tgt.$tgt | sed 's/\@\@ //g' > $evaldir/dev.$src-$tgt.$tgt
-                #
-                #$SCRIPT_DIR/scripts/preprocess/purge-empty-lines.sh "" \
-                #    $evaldir/dev.$src-$tgt.$src $evaldir/dev.$src-$tgt.$tgt
-                #
-                #cat $data_in/test.$src-$tgt.$src | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" > $evaldir/test.$src-$tgt.$src
-                #cat $data_in/test.$src-$tgt.$tgt | sed 's/\@\@ //g' > $evaldir/test.$src-$tgt.$tgt
-                #
-                #$SCRIPT_DIR/scripts/preprocess/purge-empty-lines.sh "" \
-                #    $evaldir/test.$src-$tgt.$src $evaldir/test.$src-$tgt.$tgt
             done
         done
     done

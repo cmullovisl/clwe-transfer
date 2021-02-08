@@ -15,6 +15,4 @@ train() {
         -gpu_ranks 0 \
         -config "$configdir/$trainconfig.yml" 2>&1 |
             tee "$logdir/training.$stage.$model.log"
-
-        #-config "$configdir/config-${model}.yml" 2>&1 |
 }

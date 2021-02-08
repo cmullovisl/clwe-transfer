@@ -96,7 +96,6 @@ vocab_from_model "$basemodel" "$vocabdir"
 
 
 # Evaluate basesystem performance
-#evauate_bleu "$stage" "$model" "$iteration" ...
 translationsdir="$savedir/translations/$model"
 mkdir -p "$translationsdir"
 mkdir -p "$evaldir"
