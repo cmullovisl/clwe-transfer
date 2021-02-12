@@ -1,35 +1,38 @@
 concat_data() {
     stage="$1"
 
-    rm -f "$datadir/corpus.$stage.unshuf.src"
-    rm -f "$datadir/corpus.$stage.unshuf.tgt"
-    rm -f "$datadir/corpus.$stage.src"
-    rm -f "$datadir/corpus.$stage.tgt"
+    rm -f "$datadir/train.$stage.unshuf.src"
+    rm -f "$datadir/train.$stage.unshuf.tgt"
+    rm -f "$datadir/train.$stage.src"
+    rm -f "$datadir/train.$stage.tgt"
     rm -f "$datadir/dev.$stage.src"
     rm -f "$datadir/dev.$stage.tgt"
 
     # explicitly do not quote
     for src in $2; do
         for tgt in $3; do
-            [[ $src = $tgt ]] && continue
+            [[ $src = "$tgt" ]] && continue
             echo "processing $src-$tgt"
 
             # TODO move source/target preprocessing pipeline to separate functions
-            cat "$data_in/train.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/corpus.$stage.unshuf.src"
-            cat "$data_in/train.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/corpus.$stage.unshuf.tgt"
+            # TODO don't handle shuffling as special case ~> process data sets in for loop
+            dset="train"
+            cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.unshuf.src"
+            cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.unshuf.tgt"
 
-            cat "$data_in/dev.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/dev.$stage.src"
-            cat "$data_in/dev.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/dev.$stage.tgt"
+            dset="dev"
+            cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.src"
+            cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.tgt"
         done
     done
 
     echo "shuffling..."
     "$SCRIPT_DIR"/scripts/preprocess/parallel-shuffle.sh \
-        "$datadir/corpus.$stage.unshuf.src" "$datadir/corpus.$stage.unshuf.tgt" \
-        "$datadir/corpus.$stage.src" "$datadir/corpus.$stage.tgt"
+        "$datadir/train.$stage.unshuf.src" "$datadir/train.$stage.unshuf.tgt" \
+        "$datadir/train.$stage.src" "$datadir/train.$stage.tgt"
 
-    rm -f "$datadir/corpus.$stage.unshuf.src"
-    rm -f "$datadir/corpus.$stage.unshuf.tgt"
+    rm -f "$datadir/train.$stage.unshuf.src"
+    rm -f "$datadir/train.$stage.unshuf.tgt"
 }
 
 preprocess() {
@@ -41,8 +44,8 @@ preprocess() {
     mkdir -p "$savedir"
 
     python -u "$onmt"/preprocess.py \
-        -train_src "$datadir/corpus.$stage.src" \
-        -train_tgt "$datadir/corpus.$stage.tgt" \
+        -train_src "$datadir/train.$stage.src" \
+        -train_tgt "$datadir/train.$stage.tgt" \
         -valid_src "$datadir/dev.$stage.src" \
         -valid_tgt "$datadir/dev.$stage.tgt" \
         -src_vocab "$datadir/vocab.$stage.$dset.txt" \
@@ -52,7 +55,7 @@ preprocess() {
         -src_vocab_size 1000000 \
         -tgt_vocab_size 1000000 \
         -src_seq_length 100 \
-        -tgt_seq_length 100 |& tee $logdir/preprocess.log
+        -tgt_seq_length 100 |& tee "$logdir/preprocess.log"
 }
 
 preprocess_evaluation_data() {
@@ -62,7 +65,7 @@ preprocess_evaluation_data() {
     for dset in dev test; do
         for src in $sourcelanguages; do
             for tgt in $targetlanguages; do
-                [[ $src = $tgt ]] && continue
+                [[ $src = "$tgt" ]] && continue
 
                 cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g"  > "$evaldir/$dset.$src-$tgt.$src"
                 cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' > "$evaldir/$dset.$src-$tgt.$tgt"
