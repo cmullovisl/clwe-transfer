@@ -1,9 +1,19 @@
+shuffle_corpus() {
+    local dset="$1"
+
+    echo "shuffling..."
+    "$SCRIPT_DIR"/scripts/preprocess/parallel-shuffle.sh \
+        "$datadir/$dset.$stage.src" "$datadir/$dset.$stage.tgt" \
+        "$datadir/$dset.$stage.shuf.src" "$datadir/$dset.$stage.shuf.tgt"
+
+    mv "$datadir/$dset.$stage.shuf.src" "$datadir/$dset.$stage.src"
+    mv "$datadir/$dset.$stage.shuf.tgt" "$datadir/$dset.$stage.tgt"
+}
+
 concat_data() {
     local src tgt dset
     local stage="$1"
 
-    rm -f "$datadir/train.$stage.unshuf.src"
-    rm -f "$datadir/train.$stage.unshuf.tgt"
     rm -f "$datadir/train.$stage.src"
     rm -f "$datadir/train.$stage.tgt"
     rm -f "$datadir/dev.$stage.src"
@@ -14,26 +24,14 @@ concat_data() {
         for tgt in $3; do
             [[ $src = "$tgt" ]] && continue
             echo "processing $src-$tgt"
-
-            # TODO move source/target preprocessing pipeline to separate functions
-            # TODO don't handle shuffling as special case ~> process data sets in for loop
-            dset="train"
-            cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.unshuf.src"
-            cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.unshuf.tgt"
-
-            dset="dev"
-            cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.src"
-            cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.tgt"
+            for dset in train dev; do
+                cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.src"
+                cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.tgt"
+            done
         done
     done
 
-    echo "shuffling..."
-    "$SCRIPT_DIR"/scripts/preprocess/parallel-shuffle.sh \
-        "$datadir/train.$stage.unshuf.src" "$datadir/train.$stage.unshuf.tgt" \
-        "$datadir/train.$stage.src" "$datadir/train.$stage.tgt"
-
-    rm -f "$datadir/train.$stage.unshuf.src"
-    rm -f "$datadir/train.$stage.unshuf.tgt"
+    shuffle_corpus "train"
 }
 
 preprocess() {
