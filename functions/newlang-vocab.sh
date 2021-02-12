@@ -6,28 +6,28 @@ get_latest_model() {
     ls -t "$modeldir" | head -1
 }
 
-vocab_from_model() {
+extract_specials() {
+    # TODO model specific vocabdir
     model="$1"
     vocabdir="$2"
-    # TODO model specific vocabdir
     python "$SCRIPT_DIR"/scripts/vocab/extract-specials.py "$model" "$vocabdir/specials.pt"
+}
+
+vocab_from_specials() {
+    specials="$1"
+    sourcelanguages="$2"
+    targetlanguages="$3"
 
     for dset in train dev test; do
-        for lbase in "${baselanguages[@]}"; do
-            for lnew in "${newlanguages[@]}"; do
-                [[ $lbase = $lnew ]] && continue
+        for src in $sourcelanguages; do
+            for tgt in $targetlanguages; do
+                [[ $src = "$tgt" ]] && continue
 
                 python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
-                    "$vocabdir/specials.pt" \
-                    "$datadir/embeddings.$dset.$lbase.vec" \
-                    "$datadir/embeddings.$dset.$lnew.vec" \
-                    "$vocabdir/vocab.$dset.$lbase-$lnew.pt"
-
-                python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
-                    "$vocabdir/specials.pt" \
-                    "$datadir/embeddings.$dset.$lnew.vec" \
-                    "$datadir/embeddings.$dset.$lbase.vec" \
-                    "$vocabdir/vocab.$dset.$lnew-$lbase.pt"
+                    "$specials" \
+                    "$datadir/embeddings.$dset.$src.vec" \
+                    "$datadir/embeddings.$dset.$tgt.vec" \
+                    "$vocabdir/vocab.$dset.$src-$tgt.pt"
             done
         done
     done

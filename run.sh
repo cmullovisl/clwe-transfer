@@ -23,9 +23,9 @@ logdir="$projectroot"/logs
 embeddingsdir="$projectroot"/embeddings
 dictdir="$embeddingsdir"/dicts
 datadir="$projectroot"/data
-evaldir="$projectroot/evaldata"
+evaldir="$projectroot"/evaldata
+data_in="$projectroot"/datasource
 
-data_in="$SCRIPT_DIR"/data
 fasttext="$SCRIPT_DIR"/fastText
 onmt="$SCRIPT_DIR"/onmt
 moses="$SCRIPT_DIR"/mosesdecoder
@@ -50,6 +50,7 @@ compute_alignments "${clwepivot}" "${baselanguages[@]}"
 echo "Downloading and building data..."
 mkdir -p "$data_in"
 prepare_data
+prepare_monolingual_data "${baselanguages[*]}" "${baselanguages[*]}"
 
 
 
@@ -78,20 +79,15 @@ train "$stage" "$model"
 
 
 
-## Download and process monolingual new language data and embeddings
-#...
-
-
-
-## Build new language vocab
-echo "Building new language vocabularies..."
+## Build base language vocabularies
+echo "Building base language vocabularies..."
 vocabdir="$savedir"/vocabs
 mkdir -p "$vocabdir"
-build_embeddings "${newlanguages[@]}"
-
 # TODO model specific vocabdir
 basemodel="$(get_latest_model "$savedir/models/$model")"
-vocab_from_model "$basemodel" "$vocabdir"
+extract_specials "$basemodel" "$vocabdir"
+basespecials="$vocabdir/specials.pt"
+vocab_from_specials "$basespecials" "${baselanguages[*]}" "${baselanguages[*]}"
 
 
 
@@ -104,15 +100,37 @@ echo "Evaluating base language BLEU scores..."
 preprocess_evaluation_data "${baselanguages[*]}" "${baselanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${baselanguages[*]}" "${baselanguages[*]}"
 
+
+
+## Start new language stage
+## Download and process monolingual new language data and embeddings
+echo "Preparing new language monolingual data..."
+prepare_monolingual_data "${newlanguages[*]}" "${baselanguages[*]}"
+echo "Building new language vocabularies..."
+build_embeddings "${newlanguages[@]}"
+
+
+
+stage=blindenc
+savedir="$projectroot/saves.$stage"
+vocabdir="$savedir"/vocabs
+translationsdir="$savedir/translations/$model"
+mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+
 echo "Evaluating blind encoding BLEU scores..."
+vocab_from_specials "$basespecials" "${newlanguages[*]}" "${baselanguages[*]}"
 prepare_evaluation_data "${newlanguages[*]}" "${baselanguages[*]}"
 preprocess_evaluation_data "${newlanguages[*]}" "${baselanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${newlanguages[*]}" "${baselanguages[*]}"
 
+stage=blinddec
+savedir="$projectroot/saves.$stage"
+vocabdir="$savedir"/vocabs
+translationsdir="$savedir/translations/$model"
+mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+
 echo "Evaluating blind decoding BLEU scores..."
+vocab_from_specials "$basespecials" "${baselanguages[*]}" "${newlanguages[*]}"
 prepare_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 preprocess_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
-
-# vocabularies for lnew -> lnew missing
-#evauate_bleu "$stage" "$basemodel" "${newlanguages[*]}" "${newlanguages[*]}"
