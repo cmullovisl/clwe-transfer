@@ -10,6 +10,22 @@ shuffle_corpus() {
     mv "$datadir/$dset.$stage.shuf.tgt" "$datadir/$dset.$stage.tgt"
 }
 
+strip_bpe() {
+    sed 's/\@\@ //g'
+}
+
+preprocess_source_data() {
+    local src="$1"
+    local tgt="$2"
+    strip_bpe | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g"
+}
+
+preprocess_target_data() {
+    [[ $# = 2 ]] && shift
+    local tgt="$1"
+    strip_bpe | sed "s/^/${tgt}@/; s/ / ${tgt}@/g"
+}
+
 concat_data() {
     local src tgt dset
     local stage="$1"
@@ -25,8 +41,8 @@ concat_data() {
             [[ $src = "$tgt" ]] && continue
             echo "processing $src-$tgt"
             for dset in train dev; do
-                cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g" >> "$datadir/$dset.$stage.src"
-                cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' | sed "s/^/${tgt}@/; s/ / ${tgt}@/g" >> "$datadir/$dset.$stage.tgt"
+                cat "$data_in/$dset.$src-$tgt.$src" | preprocess_source_data "$src" "$tgt" >> "$datadir/$dset.$stage.src"
+                cat "$data_in/$dset.$src-$tgt.$tgt" | preprocess_target_data "$src" "$tgt" >> "$datadir/$dset.$stage.tgt"
             done
         done
     done
@@ -67,8 +83,8 @@ preprocess_evaluation_data() {
             for tgt in $targetlanguages; do
                 [[ $src = "$tgt" ]] && continue
 
-                cat "$data_in/$dset.$src-$tgt.$src" | sed 's/\@\@ //g' | sed "s/^/#${tgt}# /" | sed "s/ / ${src}@/g"  > "$evaldir/$dset.$src-$tgt.$src"
-                cat "$data_in/$dset.$src-$tgt.$tgt" | sed 's/\@\@ //g' > "$evaldir/$dset.$src-$tgt.$tgt"
+                cat "$data_in/$dset.$src-$tgt.$src" | preprocess_source_data "$src" "$tgt" > "$evaldir/$dset.$src-$tgt.$src"
+                cat "$data_in/$dset.$src-$tgt.$tgt" | strip_bpe > "$evaldir/$dset.$src-$tgt.$tgt"
 
                 "$SCRIPT_DIR"/scripts/preprocess/purge-empty-lines.sh "" \
                     "$evaldir/$dset.$src-$tgt.$src" "$evaldir/$dset.$src-$tgt.$tgt"
