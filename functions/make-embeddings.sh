@@ -1,8 +1,6 @@
 download_fasttext_model() {
-    local lng
-    lng="$1"
-    fasttext_url="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl"
-    model=/cc.en.300.bin.gz
+    local lng="$1"
+    local fasttext_url="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl"
 
     # TODO limit amount of vocab words downloaded
     curl "${fasttext_url}/cc.${lng}.${embdim}.bin.gz" > "$embeddingsdir/cc.${lng}.${embdim}.bin.gz"
@@ -11,6 +9,7 @@ download_fasttext_model() {
 }
 
 download_embeddings() {
+    local lng
     for lng in "$@"; do
         [[ -f ${embeddingsdir}/cc.${lng}.${embdim}.bin.gz ]] || download_fasttext_model "$lng"
         # TODO copy dictionaries for language pairs
@@ -19,11 +18,13 @@ download_embeddings() {
 }
 
 compute_alignments() {
-    pivot="$1"
+    # TODO choosable alignment method
+    local lng
+    local pivot="$1"
     shift
 
     for lng in "$@"; do
-        [[ $pivot = $lng ]] && continue
+        [[ $pivot = "$lng" ]] && continue
 
         python -u "$fasttext"/alignment/align.py \
             --src_emb "$embeddingsdir/cc.$lng.300.vec" \

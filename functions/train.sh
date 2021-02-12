@@ -1,9 +1,9 @@
 train() {
     # TODO move some of this into run.sh?
-    stage="$1"
-    model="$2"
-    savedir="$projectroot/saves.$stage"
-    modeldir="$savedir/models/$model"
+    local stage="$1"
+    local model="$2"
+    local savedir="$projectroot/saves.$stage"
+    local modeldir="$savedir/models/$model"
 
     mkdir -p "$modeldir"
 

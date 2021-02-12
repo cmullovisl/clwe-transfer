@@ -1,5 +1,6 @@
 concat_data() {
-    stage="$1"
+    local src tgt dset
+    local stage="$1"
 
     rm -f "$datadir/train.$stage.unshuf.src"
     rm -f "$datadir/train.$stage.unshuf.tgt"
@@ -36,11 +37,11 @@ concat_data() {
 }
 
 preprocess() {
-    stage="$1"
-    dset=train
+    local stage="$1"
+    local dset=train
 
     # TODO move this into run.sh?
-    savedir="$projectroot/saves.$stage"
+    local savedir="$projectroot/saves.$stage"
     mkdir -p "$savedir"
 
     python -u "$onmt"/preprocess.py \
@@ -59,8 +60,9 @@ preprocess() {
 }
 
 preprocess_evaluation_data() {
-    sourcelanguages="$1"
-    targetlanguages="$2"
+    local dset src tgt
+    local sourcelanguages="$1"
+    local targetlanguages="$2"
 
     for dset in dev test; do
         for src in $sourcelanguages; do
