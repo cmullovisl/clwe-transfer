@@ -3,8 +3,6 @@ import sys
 import fasttext
 import numpy as np
 
-FASTTEXT = '/home/cmullov/repositories/fastText.git/fasttext'
-
 model_path  = sys.argv[1]
 matrix_path = sys.argv[2]
 

@@ -2,6 +2,7 @@ import sys
 import io
 import re
 from collections import Counter
+from itertools import takewhile
 
 import numpy as np
 import torch
@@ -60,60 +61,19 @@ def load_vec(in_file):
     vectors = torch.from_numpy(np.stack(vectors))
     return words, vectors
 
-# def load_vec(in_file):
-#     eps = 1e-12
-# 
-#     words = []
-#     all_words = set()
-#     vectors = []
-#     with io.open(in_file, 'r', encoding='utf-8', newline='\n', errors='ignore') as f:
-#         header = next(f).rstrip()
-#         if re.match('\d+ \d+$', header):
-#             vocab_size, emb_size = header.split(' ', 1)
-#             emb_size, vocab_size = int(emb_size), int(vocab_size)
-#         else:
-#             emb_size = len(header.split()) - 1
-#             f.seek(0)
-#         # vocab_size, emb_size = next(f).rstrip().split(' ', 1)
-#         # emb_size, vocab_size = int(emb_size), int(vocab_size)
-# 
-#         for line in f:
-#             #line = line.rstrip()
-#             #if not line:
-#             #    break
-#             ## TODO decide whether to add language code
-#             ##line = "{}@{}".format(code, line)
-# 
-#             word, vector = line.rstrip().split(maxsplit=1)
-#             if word in all_words or len(vector.split()) != emb_size:
-#                 continue
-#             words.append(word)
-#             all_words.add(word)
-#             vector = np.fromstring(vector, sep=' ')
-#             vector = vector / (np.linalg.norm(vector) + eps) #normalize
-#             vectors.append(vector)
-# 
-#     vectors = torch.from_numpy(np.stack(vectors))
-#     return words, vectors
-
-#def vec_to_vocab(in_file):
-#def vec_to_vocab(in_file, specials_vocab, n_specials=4):
 def vec_to_vocab(in_file, specials_vocab):
     nsp = n_specials(specials_vocab)
     specials = specials_vocab.itos[:nsp]
-    #specials_vectors = specials_vocab.vectors[:nsp].numpy()
     specials_vectors = specials_vocab.vectors[:nsp]
 
     words, vectors = load_vec(in_file)
     words = specials + words
-    #vectors = torch.from_numpy(np.concatenate((specials_vectors, vectors), axis=0))
     vectors = torch.cat((specials_vectors, vectors), dim=0)
 
     ctr = {s: len(words)+2-i for i, s in enumerate(words)}
     vocab = Vocab(ctr, specials=specials)
     vocab.set_vectors(vocab.stoi, vectors, dim=vectors.size(1))
     return vocab
-    #return counter_to_vocab(ctr, None, vectors, specials)
 
 def get_model_embeddings(model):
     emb_key = '{}.embeddings.make_embedding.emb_luts.0.0.weight'
@@ -139,8 +99,6 @@ def set_model_embeddings(model, vectors):
     else:
         model['generator']['0.weight'] = vectors
 
-# TODO decide whether to use the newly constructed vocab's stoi
-#def counter_to_vocab(ctr, tgt_vectors, specials):
 def counter_to_vocab(ctr, stoi, tgt_vectors, specials):
     """Construct a new vocab from a Counter object and sets the target vectors
     according to the indices in `stoi`.
@@ -153,7 +111,6 @@ def counter_to_vocab(ctr, stoi, tgt_vectors, specials):
     :returns: the newly constructed Vocab object
     """
     vocab = Vocab(ctr, specials=specials)
-    #vocab.set_vectors(vocab.stoi, tgt_vectors, dim=tgt_vectors.size(1))
     vocab.set_vectors(stoi, tgt_vectors, dim=tgt_vectors.size(1))
     return vocab
 
@@ -161,20 +118,16 @@ def filter_vocab(vocab, filter_func):
     counter = vocab.freqs
 
     new_ctr  = {s: freq for s, freq in counter.items() if filter_func(s)}
-    #specials = {s: freq for s, freq in counter.items() if '@' not in s}
-    # FIXME don't hardcode
-    #N_SPECIALS = 10 # = len(vocab.specials)
-    #N_SPECIALS = n_specials(vocab)
-    #specials = {s: counter[s] for s in vocab.itos[:N_SPECIALS]}
     specials = extract_specials(vocab)
     new_ctr.update(specials)
 
     return counter_to_vocab(new_ctr, vocab.stoi, vocab.vectors, list(specials))
 
 def extract_specials(vocab):
-    prefix = '[a-z][a-z]@'
-    RE_non_special = re.compile(prefix)
-    return {s: vocab.freqs[s] for s in vocab.itos if not RE_non_special.match(s)}
+    special = '(?![a-z][a-z]@)'
+    RE_special = re.compile(special)
+    specials = takewhile(RE_special.match, vocab.itos)
+    return {s: vocab.freqs[s] for s in specials}
 
 def n_specials(vocab):
     """Count the number of special tokens in the vocabulary, identifying a
