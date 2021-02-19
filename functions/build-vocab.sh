@@ -59,3 +59,32 @@ build_basesystem_embeddings() {
         tail -n +2 "$out" | embeddings_to_vocab > "$datadir/vocab.$stage.$dset.txt"
     done
 }
+
+extract_specials() {
+    # TODO model specific vocabdir
+    local model="$1"
+    local vocabdir="$2"
+    python "$SCRIPT_DIR"/scripts/vocab/extract-specials.py "$model" "$vocabdir/specials.pt"
+}
+
+vocab_from_specials() {
+    local dset src tgt
+    local specials="$1"
+    local sourcelanguages="$2"
+    local targetlanguages="$3"
+
+    #for dset in train dev test; do
+    for dset in dev test; do
+        for src in $sourcelanguages; do
+            for tgt in $targetlanguages; do
+                [[ $src = "$tgt" ]] && continue
+
+                python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
+                    "$specials" \
+                    "$datadir/embeddings.$dset.$src.vec" \
+                    "$datadir/embeddings.$dset.$tgt.vec" \
+                    "$vocabdir/vocab.$dset.$src-$tgt.pt"
+            done
+        done
+    done
+}

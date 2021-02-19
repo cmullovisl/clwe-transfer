@@ -78,8 +78,15 @@ echo "Training basesystem..."
 train "$stage" "$model"
 
 
-
 ## Build base language vocabularies
+get_latest_model() {
+    local modeldir="$1"
+
+    # output full model path
+    echo -n "$modeldir/"
+    ls -t "$modeldir" | head -1
+}
+
 echo "Building base language vocabularies..."
 vocabdir="$savedir"/vocabs
 mkdir -p "$vocabdir"
