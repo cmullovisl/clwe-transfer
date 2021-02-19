@@ -1,11 +1,11 @@
 import sys
 import io
 import re
-from collections import Counter
 from itertools import takewhile
 
 import numpy as np
 import torch
+from torch.nn.functional import normalize
 from torchtext.vocab import Vocab
 
 def load_model(model_path):
@@ -30,20 +30,17 @@ def vocab_to_vec(stoi, vectors, out_file):
     f.close()
 
 def load_vec(in_file):
-    eps = 1e-12
-
     words = []
     all_words = set()
     vectors = []
 
     def _process_line(line):
         word, vector = line.rstrip().split(maxsplit=1)
-        if word in all_words or len(vector.split()) != emb_size:
+        if word in all_words:
             return
         words.append(word)
         all_words.add(word)
         vector = np.fromstring(vector, sep=' ', dtype=np.float32)
-        vector = vector / (np.linalg.norm(vector) + eps) #normalize
         vectors.append(vector)
 
     with io.open(in_file, 'r', encoding='utf-8', newline='\n', errors='ignore') as f:
@@ -59,12 +56,13 @@ def load_vec(in_file):
             _process_line(line)
 
     vectors = torch.from_numpy(np.stack(vectors))
+    normalize(vectors, p=2, dim=1, out=vectors)
     return words, vectors
 
 def vec_to_vocab(in_file, specials_vocab):
-    nsp = n_specials(specials_vocab)
-    specials = specials_vocab.itos[:nsp]
-    specials_vectors = specials_vocab.vectors[:nsp]
+    specials = list(extract_specials(specials_vocab))
+    special_indices = [specials_vocab.stoi[s] for s in specials]
+    specials_vectors = specials_vocab.vectors[special_indices]
 
     words, vectors = load_vec(in_file)
     words = specials + words
