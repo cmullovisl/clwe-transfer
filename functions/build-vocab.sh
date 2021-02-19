@@ -88,3 +88,40 @@ vocab_from_specials() {
         done
     done
 }
+
+build_newlang_vocabs() {
+    local basespecials="$1"
+    local sourcelanguages="$2"
+    local targetlanguages="$3"
+
+    local newspecials="$vocabdir/specials.py"
+    # TODO test how preprocess.py handles `-src_vocab` and then change to
+    #      "data.vocab.pt"
+    local newvocab="$savedir/data.newlangs.vocab.pt"
+
+    local newlanguagecodes=()
+    for lng in "${newlanguages[@]}"; do
+        newlanguagecodes+=("#${lng}#")
+    done
+
+    python "$SCRIPT_DIR"/scripts/vocab/add-specials.py \
+        "$basespecials" \
+        "$newlanguagecodes" \
+        "$newspecials"
+
+    local dset="train"
+    local sourceembeddings=()
+    for lng in $sourcelanguages; do
+        sourceembeddings+=("$datadir/embeddings.$dset.$lng.vec")
+    done
+    local targetmbeddings=()
+    for lng in $targetlanguages; do
+        targetembeddings+=("$datadir/embeddings.$dset.$lng.vec")
+    done
+
+    python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
+        "$newspecials" \
+        <(cat "${sourceembeddings[@]}") \
+        <(cat "${targetembeddings[@]}") \
+        "$newvocab"
+}
