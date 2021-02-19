@@ -33,15 +33,15 @@ calculate_bleu() {
 }
 
 evauate_bleu() {
-    local src tgt dset
+    local src tgt dset modelname iteration
     local stage="$1"
     local model="$2"
     local sourcelanguages="$3"
     local targetlanguages="$4"
 
     local modelname_regex='^\(.*\)_step_\([0-9]*\)\.pt$'
-    local modelname="$(basename "$model" | sed "s|${modelname_regex}|\1|")"
-    local iteration="$(basename "$model" | sed "s|${modelname_regex}|\2|")"
+    modelname="$(basename "$model" | sed "s|${modelname_regex}|\1|")"
+    iteration="$(basename "$model" | sed "s|${modelname_regex}|\2|")"
     local result="$translationsdir/ted.multi_bleu.$stage.$iteration"
 
     mkdir -p "$translationsdir"
@@ -49,7 +49,7 @@ evauate_bleu() {
 
     for src in $sourcelanguages; do
         for tgt in $targetlanguages; do
-            [[ $src = $tgt ]] && continue
+            [[ $src = "$tgt" ]] && continue
 
             echo "$src-$tgt" | tee -a "$result"
             for dset in dev test

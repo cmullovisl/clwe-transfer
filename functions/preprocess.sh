@@ -29,6 +29,8 @@ preprocess_target_data() {
 concat_data() {
     local src tgt dset
     local stage="$1"
+    local sourcelanguages="$2"
+    local targetlanguages="$3"
 
     rm -f "$datadir/train.$stage.src"
     rm -f "$datadir/train.$stage.tgt"
@@ -36,8 +38,8 @@ concat_data() {
     rm -f "$datadir/dev.$stage.tgt"
 
     # explicitly do not quote
-    for src in $2; do
-        for tgt in $3; do
+    for src in $sourcelanguages; do
+        for tgt in $targetlanguages; do
             [[ $src = "$tgt" ]] && continue
             echo "processing $src-$tgt"
             for dset in train dev; do
