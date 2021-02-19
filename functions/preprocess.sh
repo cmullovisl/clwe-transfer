@@ -1,7 +1,6 @@
 shuffle_corpus() {
     local dset="$1"
 
-    echo "shuffling..."
     "$SCRIPT_DIR"/scripts/preprocess/parallel-shuffle.sh \
         "$datadir/$dset.$stage.src" "$datadir/$dset.$stage.tgt" \
         "$datadir/$dset.$stage.shuf.src" "$datadir/$dset.$stage.shuf.tgt"
@@ -49,6 +48,28 @@ concat_data() {
         done
     done
 
+    echo "shuffling..."
+    shuffle_corpus "train"
+}
+
+concat_monolingual_corpus() {
+    local lng dset
+    local stage="$1"
+    local languages="$2"
+
+    rm -f "$datadir/train.$stage.src"
+    rm -f "$datadir/train.$stage.tgt"
+    rm -f "$datadir/dev.$stage.src"
+    rm -f "$datadir/dev.$stage.tgt"
+
+    for lng in $languages; do
+        for dset in train dev; do
+            cat "$data_in/$dset.$lng" | preprocess_source_data "$lng" "$lng" >> "$datadir/$dset.$stage.src"
+            cat "$data_in/$dset.$lng" | preprocess_target_data "$lng" "$lng" >> "$datadir/$dset.$stage.tgt"
+        done
+    done
+
+    echo "shuffling..."
     shuffle_corpus "train"
 }
 
@@ -69,6 +90,31 @@ preprocess() {
         -tgt_vocab "$datadir/vocab.$stage.$dset.txt" \
         -save_data "$savedir/data" \
         -tgt_emb "$datadir/embeddings.$stage.$dset.vec" \
+        -src_vocab_size 1000000 \
+        -tgt_vocab_size 1000000 \
+        -src_seq_length 100 \
+        -tgt_seq_length 100 |& tee "$logdir/preprocess.log"
+}
+
+preprocess_reuse_vocab() {
+    local stage="$1"
+    local vocab="$2"
+    local dset=train
+
+    # TODO move this into run.sh?
+    local savedir="$projectroot/saves.$stage"
+    mkdir -p "$savedir"
+
+    # preprocess.py seems to accept existing vocab.pt files in its `-src_vocab`
+    # option. This serialized fields dict may also contain the target side
+    # vocab.
+    python -u "$onmt"/preprocess.py \
+        -train_src "$datadir/train.$stage.src" \
+        -train_tgt "$datadir/train.$stage.tgt" \
+        -valid_src "$datadir/dev.$stage.src" \
+        -valid_tgt "$datadir/dev.$stage.tgt" \
+        -src_vocab "$vocab" \
+        -save_data "$savedir/data" \
         -src_vocab_size 1000000 \
         -tgt_vocab_size 1000000 \
         -src_seq_length 100 \
