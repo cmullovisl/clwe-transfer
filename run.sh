@@ -141,3 +141,28 @@ vocab_from_specials "$basespecials" "${baselanguages[*]}" "${newlanguages[*]}"
 prepare_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 preprocess_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
+
+
+
+stage=autoencoder
+savedir="$projectroot/saves.$stage"
+vocabdir="$savedir"/vocabs
+translationsdir="$savedir/translations/$model"
+mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+
+echo "Building autoencoder training corpus and vocabulary..."
+build_newlang_vocab "$basespecials" "${newlanguages[*]}" "${newlanguages[*]}"
+concat_monolingual_corpus "$stage" "${newlanguages[*]}"
+# TODO better solution for vocab path
+preprocess_reuse_vocab "$stage" "$savedir/data.newlangs.vocab.pt"
+
+echo "Training autoencoder..."
+train_continue "$stage" "$model" "$basemodel" "$autoencoderconfig"
+
+echo "Building autoencoder vocabularies..."
+aemodel="$(get_latest_model "$savedir/models/$model")"
+vocab_from_specials "$savedir/data.newlangs.vocab.pt" "${newlanguages[*]}" "${baselanguages[*]}"
+vocab_from_specials "$savedir/data.newlangs.vocab.pt" "${baselanguages[*]}" "${newlanguages[*]}"
+
+echo "Evaluating autoencoding BLEU scores..."
+evauate_bleu "$stage" "$aemodel" "${baselanguages[*]}" "${newlanguages[*]}"

@@ -89,7 +89,7 @@ vocab_from_specials() {
     done
 }
 
-build_newlang_vocabs() {
+build_newlang_vocab() {
     local basespecials="$1"
     local sourcelanguages="$2"
     local targetlanguages="$3"
