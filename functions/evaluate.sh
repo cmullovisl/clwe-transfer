@@ -17,7 +17,8 @@ translate() {
         -model "$model" \
         -src "$evaldir/$dset.$src-$tgt.$src" \
         -output "$translationsdir/$dset.$src-$tgt.$tgt.pred" \
-        -new_vocab "$vocabdir/vocab.$dset.$src-$tgt.pt"
+        -src_embeddings "$datadir/embeddings.$dset.$src.vec" \
+        -tgt_embeddings "$datadir/embeddings.train.$tgt.vec"
 }
 
 calculate_bleu() {
