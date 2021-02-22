@@ -79,7 +79,6 @@ preprocess() {
 
     # TODO move this into run.sh?
     local savedir="$projectroot/saves.$stage"
-    mkdir -p "$savedir"
 
     python -u "$onmt"/preprocess.py \
         -train_src "$datadir/train.$stage.src" \
@@ -103,11 +102,9 @@ preprocess_reuse_vocab() {
 
     # TODO move this into run.sh?
     local savedir="$projectroot/saves.$stage"
-    mkdir -p "$savedir"
 
-    # preprocess.py seems to accept existing vocab.pt files in its `-src_vocab`
-    # option. This serialized fields dict may also contain the target side
-    # vocab.
+    # preprocess.py accepts existing vocab.pt files in its `-src_vocab` option.
+    # This serialized fields dict may also contain the target side vocab.
     python -u "$onmt"/preprocess.py \
         -train_src "$datadir/train.$stage.src" \
         -train_tgt "$datadir/train.$stage.tgt" \

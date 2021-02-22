@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-import io
 import numpy as np
 
 emb_dim = int(sys.argv[1])

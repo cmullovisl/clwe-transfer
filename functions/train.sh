@@ -36,10 +36,9 @@ train_continue() {
         -data "$savedir/data" \
         -save_model "$modeldir/$model" \
         -train_from "$trainfrom" \
-        -reset_optim all \
+        -new_vocab "$savedir/data.vocab.pt" \
         -modify_opts \
         -gpu_ranks 0 \
-        -new_vocab "$savedir/data.vocab.pt" \
         -config "$configdir/$trainconfig.yml" 2>&1 |
             tee "$logdir/training.$stage.$model.log"
 }
