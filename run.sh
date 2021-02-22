@@ -30,55 +30,6 @@ fasttext="$SCRIPT_DIR"/fastText
 onmt="$SCRIPT_DIR"/onmt
 moses="$SCRIPT_DIR"/mosesdecoder
 
-
-# Start basemodel stage
-mkdir -p "$logdir"
-stage=base
-savedir="$projectroot/saves.$stage"
-
-
-## Compute Cross-Lingual Word Embeddings
-echo "Computing Cross-Linugal Word Embeddings..."
-mkdir -p "$embeddingsdir"
-
-download_embeddings "${baselanguages[@]}"
-compute_alignments "${clwepivot}" "${baselanguages[@]}"
-
-
-
-## Download and build data
-echo "Downloading and building data..."
-mkdir -p "$data_in"
-prepare_data
-prepare_monolingual_data "${baselanguages[*]}" "${baselanguages[*]}"
-
-
-
-## Build basesystem vocabulary
-echo "Building basesystem vocabulary..."
-mkdir -p "$datadir"
-generate_specials "$embdim" "${baselanguages[@]}"
-# XXX separate .vec file for each language?
-build_embeddings "${baselanguages[@]}"
-build_basesystem_embeddings "${baselanguages[@]}"
-
-
-
-## Preprocess
-echo "Concatenating training corpus..."
-concat_data "$stage" "${baselanguages[*]}" "${baselanguages[*]}"
-
-echo "Building PyTorch training shards and vocabulary..."
-preprocess "$stage"
-
-
-
-## Train basemodel
-echo "Training basesystem..."
-train "$stage" "$model"
-
-
-## Build base language vocabularies
 get_latest_model() {
     local modeldir="$1"
 
@@ -87,21 +38,48 @@ get_latest_model() {
     ls -t "$modeldir" | head -1
 }
 
-echo "Building base language vocabularies..."
-vocabdir="$savedir"/vocabs
-mkdir -p "$vocabdir"
-# TODO model specific vocabdir
-basemodel="$(get_latest_model "$savedir/models/$model")"
-extract_specials "$basemodel" "$vocabdir"
-basespecials="$vocabdir/specials.pt"
-vocab_from_specials "$basespecials" "${baselanguages[*]}" "${baselanguages[*]}"
+set_stage() {
+    stage="$1"
 
+    savedir="$projectroot/saves.$stage"
+    translationsdir="$savedir/translations/$model"
 
+    mkdir -p "$savedir" "$translationsdir"
+}
 
-# Evaluate basesystem performance
-translationsdir="$savedir/translations/$model"
-mkdir -p "$translationsdir"
+mkdir -p "$logdir"
+mkdir -p "$embeddingsdir"
+mkdir -p "$data_in"
+mkdir -p "$datadir"
 mkdir -p "$evaldir"
+
+
+
+# Start basemodel stage
+set_stage "base"
+
+echo "Computing Cross-Linugal Word Embeddings..."
+download_embeddings "${baselanguages[@]}"
+compute_alignments "${clwepivot}" "${baselanguages[@]}"
+
+echo "Downloading and building data..."
+prepare_data
+prepare_monolingual_data "${baselanguages[*]}" "${baselanguages[*]}"
+
+echo "Building basesystem vocabulary..."
+generate_specials "$embdim" "${baselanguages[@]}"
+build_embeddings "${baselanguages[@]}"
+build_basesystem_embeddings "${baselanguages[@]}"
+
+echo "Concatenating training corpus..."
+concat_data "$stage" "${baselanguages[*]}" "${baselanguages[*]}"
+
+echo "Building PyTorch training shards and vocabulary..."
+preprocess "$stage"
+
+echo "Training basesystem..."
+train "$stage" "$model"
+basemodel="$(get_latest_model "$savedir/models/$model")"
 
 echo "Evaluating base language BLEU scores..."
 preprocess_evaluation_data "${baselanguages[*]}" "${baselanguages[*]}"
@@ -109,60 +87,51 @@ evauate_bleu "$stage" "$basemodel" "${baselanguages[*]}" "${baselanguages[*]}"
 
 
 
-## Start new language stage
-## Download and process monolingual new language data and embeddings
+## Start new language stages
+echo "Computing Cross-Linugal Word Embeddings for new languages..."
+download_embeddings "${newlanguages[@]}"
+compute_alignments "${clwepivot}" "${newlanguages[@]}"
+
 echo "Preparing new language monolingual data..."
 prepare_monolingual_data "${newlanguages[*]}" "${baselanguages[*]}"
+
 echo "Building new language vocabularies..."
 build_embeddings "${newlanguages[@]}"
 
 
 
-stage=blindenc
-savedir="$projectroot/saves.$stage"
-vocabdir="$savedir"/vocabs
-translationsdir="$savedir/translations/$model"
-mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+# Start blind encoding stage
+set_stage "blindenc"
 
 echo "Evaluating blind encoding BLEU scores..."
-vocab_from_specials "$basespecials" "${newlanguages[*]}" "${baselanguages[*]}"
 prepare_evaluation_data "${newlanguages[*]}" "${baselanguages[*]}"
 preprocess_evaluation_data "${newlanguages[*]}" "${baselanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${newlanguages[*]}" "${baselanguages[*]}"
 
-stage=blinddec
-savedir="$projectroot/saves.$stage"
-vocabdir="$savedir"/vocabs
-translationsdir="$savedir/translations/$model"
-mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+
+
+# Start blind decoding stage
+set_stage "blinddec"
 
 echo "Evaluating blind decoding BLEU scores..."
-vocab_from_specials "$basespecials" "${baselanguages[*]}" "${newlanguages[*]}"
 prepare_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 preprocess_evaluation_data "${baselanguages[*]}" "${newlanguages[*]}"
 evauate_bleu "$stage" "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
 
 
 
-stage=autoencoder
-savedir="$projectroot/saves.$stage"
-vocabdir="$savedir"/vocabs
-translationsdir="$savedir/translations/$model"
-mkdir -p "$savedir" "$vocabdir" "$translationsdir"
+# Start autoencoding stage
+set_stage "autoencoder"
 
 echo "Building autoencoder training corpus and vocabulary..."
-build_newlang_vocab "$basespecials" "${newlanguages[*]}" "${newlanguages[*]}"
+build_newlang_vocab "$basemodel" "${newlanguages[*]}" "${newlanguages[*]}"
 concat_monolingual_corpus "$stage" "${newlanguages[*]}"
 # TODO better solution for vocab path
-preprocess_reuse_vocab "$stage" "$savedir/data.newlangs.vocab.pt"
+preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
 
 echo "Training autoencoder..."
 train_continue "$stage" "$model" "$basemodel" "$autoencoderconfig"
 
-echo "Building autoencoder vocabularies..."
-aemodel="$(get_latest_model "$savedir/models/$model")"
-vocab_from_specials "$savedir/data.newlangs.vocab.pt" "${newlanguages[*]}" "${baselanguages[*]}"
-vocab_from_specials "$savedir/data.newlangs.vocab.pt" "${baselanguages[*]}" "${newlanguages[*]}"
-
 echo "Evaluating autoencoding BLEU scores..."
+aemodel="$(get_latest_model "$savedir/models/$model")"
 evauate_bleu "$stage" "$aemodel" "${baselanguages[*]}" "${newlanguages[*]}"

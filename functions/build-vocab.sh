@@ -61,10 +61,9 @@ build_basesystem_embeddings() {
 }
 
 extract_specials() {
-    # TODO model specific vocabdir
     local model="$1"
-    local vocabdir="$2"
-    python "$SCRIPT_DIR"/scripts/vocab/extract-specials.py "$model" "$vocabdir/specials.pt"
+    local outfile="$2"
+    python "$SCRIPT_DIR"/scripts/vocab/extract-specials.py "$model" "$outfile"
 }
 
 vocab_from_specials() {
@@ -90,14 +89,15 @@ vocab_from_specials() {
 }
 
 build_newlang_vocab() {
-    local basespecials="$1"
+    local basemodel="$1"
     local sourcelanguages="$2"
     local targetlanguages="$3"
 
-    local newspecials="$vocabdir/specials.py"
-    # TODO test how preprocess.py handles `-src_vocab` and then change to
-    #      "data.vocab.pt"
-    local newvocab="$savedir/data.newlangs.vocab.pt"
+    local basespecials="$savedir/specials.pt"
+    local newspecials="$savedir/specials.pt"
+    local newvocab="$savedir/data.vocab.pt"
+
+    extract_specials "$basemodel" "$basespecials"
 
     local newlanguagecodes=()
     for lng in "${newlanguages[@]}"; do
