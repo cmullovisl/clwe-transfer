@@ -14,7 +14,6 @@ source "$SCRIPT_DIR"/functions/prepare-data.sh
 source "$SCRIPT_DIR"/functions/build-vocab.sh
 source "$SCRIPT_DIR"/functions/preprocess.sh
 source "$SCRIPT_DIR"/functions/train.sh
-source "$SCRIPT_DIR"/functions/newlang-vocab.sh
 source "$SCRIPT_DIR"/functions/evaluate.sh
 
 # TODO move all environment variables to config/vars
@@ -78,7 +77,7 @@ echo "Building PyTorch training shards and vocabulary..."
 preprocess "$stage"
 
 echo "Training basesystem..."
-train "$stage" "$model"
+train "$stage" "$model" "$baseconfig"
 basemodel="$(get_latest_model "$savedir/models/$model")"
 
 echo "Evaluating base language BLEU scores..."
@@ -130,7 +129,7 @@ concat_monolingual_corpus "$stage" "${newlanguages[*]}"
 preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
 
 echo "Training autoencoder..."
-train_continue "$stage" "$model" "$basemodel" "$autoencoderconfig"
+train_continue "$stage" "$model" "$autoencoderconfig" "$basemodel"
 
 echo "Evaluating autoencoding BLEU scores..."
 aemodel="$(get_latest_model "$savedir/models/$model")"

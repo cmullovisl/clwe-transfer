@@ -3,6 +3,6 @@ baselanguages=(en de es fr it)
 newlanguages=(pt ru)
 clwepivot=en
 embdim=300
-trainconfig="train-base"
+baseconfig="train-base"
 autoencoderconfig="train-autoencoder"
 model="continuous"

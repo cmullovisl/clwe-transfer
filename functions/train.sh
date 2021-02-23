@@ -1,44 +1,36 @@
 train() {
-    # TODO move some of this into run.sh?
     local stage="$1"
     local model="$2"
+    local trainconfig="$3"
+    shift 3
+    local additional_args=("$@")
+
     local savedir="$projectroot/saves.$stage"
     local modeldir="$savedir/models/$model"
 
     mkdir -p "$modeldir"
 
-    # NOTE instead of using `-pre_word_vecs_enc "$savedir/embeddings.tgt.pt"`
-    # let onmt load the embedding vectors from tgt_vocab.vectors
+    # `${additional_args[@]+"${additional_args[@]}"}` is an ugly workaround for
+    # the expansion of empty arrays failing in older versions of Bash (see
+    # https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u/61551944#61551944)
     python -u "$onmt"/train.py \
         -data "$savedir/data" \
         -save_model "$modeldir/$model" \
         -gpu_ranks 0 \
-        -config "$configdir/$trainconfig.yml" 2>&1 |
+        -config "$configdir/$trainconfig.yml" \
+        ${additional_args[@]+"${additional_args[@]}"} 2>&1 |
             tee "$logdir/training.$stage.$model.log"
 }
 
 train_continue() {
-    # TODO add `${additional_args}` array to `train()` and call `train` here
-    # TODO move some of this into run.sh?
     local stage="$1"
     local model="$2"
-    local trainfrom="$3"
-    local trainconfig="$4"
+    local trainconfig="$3"
+    local trainfrom="$4"
 
-    local savedir="$projectroot/saves.$stage"
-    local modeldir="$savedir/models/$model"
-
-    mkdir -p "$modeldir"
-
-    # NOTE instead of using `-pre_word_vecs_enc "$savedir/embeddings.tgt.pt"`
-    # let onmt load the embedding vectors from tgt_vocab.vectors
-    python -u "$onmt"/train.py \
-        -data "$savedir/data" \
-        -save_model "$modeldir/$model" \
+    train "$stage" \
+        "$model" \
+        "$trainconfig" \
         -train_from "$trainfrom" \
-        -new_vocab "$savedir/data.vocab.pt" \
-        -modify_opts \
-        -gpu_ranks 0 \
-        -config "$configdir/$trainconfig.yml" 2>&1 |
-            tee "$logdir/training.$stage.$model.log"
+        -new_vocab "$savedir/data.vocab.pt"
 }
