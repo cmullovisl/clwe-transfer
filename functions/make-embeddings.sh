@@ -21,25 +21,32 @@ download_embeddings() {
     done
 }
 
+download_dictionaries() {
+    local src="$1"
+    local tgt="$2"
+
+    local dict_url="https://dl.fbaipublicfiles.com/arrival/dictionaries"
+    curl "${dict_url}/$src-$tgt.txt" > "$dictdir/$src-$tgt.txt"
+    curl "${dict_url}/$src-$tgt.0-5000.txt" > "$dictdir/$src-$tgt.0-5000.txt"
+}
+
 compute_alignments() {
     # TODO choosable alignment method
     local lng
     local pivot="$1"
     shift
 
-    # TODO copy dictionaries for language pairs
-    [[ -e $dictdir ]] || download_dictionaries
-
     for lng in "$@"; do
-
         [[ $pivot = "$lng" ]] && continue
+        [[ -f $dictdir/$lng-$pivot ]] || download_dictionaries "$lng" "$pivot"
+
 
         # fasttext saves the aligned embeddings to the output file (`--output`)
         # and the alignment matrix to the output file + "-mat" suffix. Since we
         # only require the matrix, we discard the embeddings by writing to
         # /dev/null (through a symbolic link hack)
         outfile="$embeddingsdir/aligned.$lng.vec"
-        ln -s /dev/null "$outfile"
+        ln -sf /dev/null "$outfile"
 
         python -u "$fasttext"/alignment/align.py \
             --src_emb "$embeddingsdir/cc.$lng.$embdim.vec" \

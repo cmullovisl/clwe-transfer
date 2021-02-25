@@ -49,6 +49,7 @@ set_stage() {
 
 mkdir -p "$logdir"
 mkdir -p "$embeddingsdir"
+mkdir -p "$dictdir"
 mkdir -p "$data_in"
 mkdir -p "$datadir"
 mkdir -p "$evaldir"
