@@ -73,6 +73,25 @@ concat_monolingual_corpus() {
     shuffle_corpus "train"
 }
 
+prepare_backtranslation() {
+    local src tgt dset
+    local data_in="$1"
+    local sourcelanguages="$2"
+    local targetlanguages="$3"
+
+    local btdir="$savedir/backtranslations"
+    mkdir -p "$btdir"
+
+    for src in $sourcelanguages; do
+        for tgt in $targetlanguages; do
+            for dset in train dev; do
+                cat "$data_in/$dset.$src" |
+                    preprocess_source_data "$src" "$tgt" > "$btdir/$dset.$src-$tgt.$src"
+            done
+        done
+    done
+}
+
 preprocess() {
     local stage="$1"
     local dset=train

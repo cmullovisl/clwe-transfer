@@ -15,6 +15,7 @@ source "$SCRIPT_DIR"/functions/build-vocab.sh
 source "$SCRIPT_DIR"/functions/preprocess.sh
 source "$SCRIPT_DIR"/functions/train.sh
 source "$SCRIPT_DIR"/functions/evaluate.sh
+source "$SCRIPT_DIR"/functions/backtranslate.sh
 
 # TODO move all environment variables to config/vars
 projectroot="${2:-$SCRIPT_DIR/saves}"
@@ -134,3 +135,20 @@ train_continue "$stage" "$model" "$autoencoderconfig" "$basemodel"
 echo "Evaluating autoencoding BLEU scores..."
 aemodel="$(get_latest_model "$savedir/models/$model")"
 evauate_bleu "$stage" "$aemodel" "${baselanguages[*]}" "${newlanguages[*]}"
+
+
+
+# Start backtranslation stage
+set_stage "backtranslate"
+
+echo "Backtranslating monolingual data for new languages..."
+# TODO swap source/target languages
+prepare_backtranslation "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
+# TODO swap source/target languages
+backtranslation_round "$basemodel" "${newlanguages[*]}" "${baselanguages[*]}"
+build_newlang_vocab "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
+datadir="$savedir/backtranslations" \
+    preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
+train_continue "$stage" "$model" "$backtranslationconfig" "$basemodel"
+btmodel="$(get_latest_model "$savedir/models/$model")"
+evauate_bleu "$stage" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"

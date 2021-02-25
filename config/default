@@ -5,4 +5,5 @@ clwepivot=en
 embdim=300
 baseconfig="train-base"
 autoencoderconfig="train-autoencoder"
+backtranslationconfig="train-backtranslation"
 model="continuous"
