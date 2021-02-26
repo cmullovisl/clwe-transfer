@@ -52,7 +52,7 @@ concat_data() {
     shuffle_corpus "train"
 }
 
-concat_monolingual_corpus() {
+concat_autoencoding_corpus() {
     local lng dset
     local stage="$1"
     local languages="$2"
@@ -73,7 +73,7 @@ concat_monolingual_corpus() {
     shuffle_corpus "train"
 }
 
-prepare_backtranslation() {
+prepare_backtranslation_data() {
     local src tgt dset
     local data_in="$1"
     local sourcelanguages="$2"

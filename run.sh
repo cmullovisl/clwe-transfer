@@ -126,7 +126,7 @@ set_stage "autoencoder"
 
 echo "Building autoencoder training corpus and vocabulary..."
 build_newlang_vocab "$basemodel" "${newlanguages[*]}" "${newlanguages[*]}"
-concat_monolingual_corpus "$stage" "${newlanguages[*]}"
+concat_autoencoding_corpus "$stage" "${newlanguages[*]}"
 # TODO better solution for vocab path
 preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
 
@@ -144,7 +144,7 @@ set_stage "backtranslate"
 
 echo "Backtranslating monolingual data for new languages..."
 # TODO swap source/target languages
-prepare_backtranslation "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
+prepare_backtranslation_data "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
 # TODO swap source/target languages
 backtranslation_round "$basemodel" "${newlanguages[*]}" "${baselanguages[*]}"
 build_newlang_vocab "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
