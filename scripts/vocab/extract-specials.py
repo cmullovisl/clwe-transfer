@@ -28,10 +28,6 @@ field = model['vocab']
 tgt_vocab = field['tgt'].base_field.vocab
 tgt_vectors = get_model_embeddings(model)
 
-assert(len(vocab) == tgt_vectors.size(0))
-
-# filter out all words except for the specials
-#new_vocab = filter_vocab(tgt_vocab, lambda x: False)
 specials_ctr = extract_specials(tgt_vocab)
 new_vocab = counter_to_vocab(specials_ctr, tgt_vocab.stoi, tgt_vectors, list(specials_ctr))
 

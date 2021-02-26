@@ -9,7 +9,6 @@ translate() {
     local batchsize=4000
 
     python -u "$onmt"/translate.py \
-        -decode_loss cosine \
         -batch_type tokens \
         -batch_size "$batchsize" \
         -beam_size "$beamsize" \

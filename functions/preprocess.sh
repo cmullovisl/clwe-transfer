@@ -117,7 +117,6 @@ preprocess() {
 preprocess_reuse_vocab() {
     local stage="$1"
     local vocab="$2"
-    local dset=train
 
     # TODO move this into run.sh?
     local savedir="$projectroot/saves.$stage"
