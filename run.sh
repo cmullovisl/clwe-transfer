@@ -141,15 +141,15 @@ evauate_bleu "$stage" "$aemodel" "${baselanguages[*]}" "${newlanguages[*]}"
 
 # Start backtranslation stage
 set_stage "backtranslate"
+btmodel="$basemodel"
 
 echo "Backtranslating monolingual data for new languages..."
-# TODO swap source/target languages
-prepare_backtranslation_data "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
-# TODO swap source/target languages
-backtranslation_round "$basemodel" "${newlanguages[*]}" "${baselanguages[*]}"
-build_newlang_vocab "$basemodel" "${baselanguages[*]}" "${newlanguages[*]}"
-datadir="$savedir/backtranslations" \
-    preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
-train_continue "$stage" "$model" "$backtranslationconfig" "$basemodel"
+prepare_backtranslation_data "$data_in" "${baselanguages[*]}" "${newlanguages[*]}"
+backtranslation_round "$basemodel" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
 btmodel="$(get_latest_model "$savedir/models/$model")"
 evauate_bleu "$stage" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
+
+prepare_backtranslation_data "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
+backtranslation_round "$basemodel" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
+btmodel="$(get_latest_model "$savedir/models/$model")"
+evauate_bleu "$stage" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"

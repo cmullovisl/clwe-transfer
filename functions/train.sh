@@ -27,10 +27,13 @@ train_continue() {
     local model="$2"
     local trainconfig="$3"
     local trainfrom="$4"
+    shift 4
+    local additional_args=("$@")
 
     train "$stage" \
         "$model" \
         "$trainconfig" \
         -train_from "$trainfrom" \
-        -new_vocab "$savedir/data.vocab.pt"
+        -new_vocab "$savedir/data.vocab.pt" \
+        ${additional_args[@]+"${additional_args[@]}"}
 }

@@ -85,8 +85,8 @@ prepare_backtranslation_data() {
     for src in $sourcelanguages; do
         for tgt in $targetlanguages; do
             for dset in train dev; do
-                cat "$data_in/$dset.$src" |
-                    preprocess_source_data "$src" "$tgt" > "$btdir/$dset.$src-$tgt.$src"
+                cat "$data_in/$dset.$tgt" |
+                    preprocess_source_data "$tgt" "$src" > "$btdir/$dset.$tgt-$src.$tgt"
             done
         done
     done

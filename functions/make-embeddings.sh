@@ -30,6 +30,24 @@ download_dictionaries() {
     curl "${dict_url}/$src-$tgt.0-5000.txt" > "$dictdir/$src-$tgt.0-5000.txt"
 }
 
+compute_unsupervised_alignments() {
+    local lng
+
+    local lnglist="$1"
+    for lng in "${@:2}"; do
+        lnglist="$lnglist-$lng"
+    done
+
+    for lng in "$@"; do
+        ln -sf "cc.$lng.$embdim.vec" "$embeddingsdir/wiki.$lng.vec"
+    done
+
+    python -u "$fasttext"/alignment/unsup_multialign.py \
+        --embdir "$embeddingsdir" \
+        --lglist "$lnglist" \
+        --outdir "$embeddingsdir" 2>&1 | tee "$logdir/align.$lng.log"
+}
+
 compute_alignments() {
     # TODO choosable alignment method
     local lng
