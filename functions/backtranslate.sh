@@ -121,7 +121,9 @@ backtranslation_round() {
     datadir="$savedir/backtranslations" \
         preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"
 
-    train_continue "$stage" "$model" "$backtranslationconfig" "$basemodel"
+    [[ $freezeenc ]] &&
+        train_continue "$stage" "$model" "$backtranslationconfig" "$basemodel" -freeze_encoder -train_steps 16000 ||
+        train_continue "$stage" "$model" "$backtranslationconfig" "$basemodel"
 
     rm -vf "$savedir"/data.train.[0-9]*.pt
     rm -vf "$savedir"/data.valid.[0-9]*.pt

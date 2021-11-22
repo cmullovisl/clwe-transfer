@@ -145,11 +145,26 @@ btmodel="$basemodel"
 
 echo "Backtranslating monolingual data for new languages..."
 prepare_backtranslation_data "$data_in" "${baselanguages[*]}" "${newlanguages[*]}"
-backtranslation_round "$basemodel" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
+freezeenc=y \
+    backtranslation_round "$basemodel" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
 btmodel="$(get_latest_model "$savedir/models/$model")"
 evauate_bleu "$stage" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
 
 prepare_backtranslation_data "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
-backtranslation_round "$basemodel" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
+freezeenc= \
+    backtranslation_round "$basemodel" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
+btmodel="$(get_latest_model "$savedir/models/$model")"
+evauate_bleu "$stage" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
+
+
+prepare_backtranslation_data "$data_in" "${baselanguages[*]}" "${newlanguages[*]}"
+freezeenc=y \
+    backtranslation_round "$basemodel" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
+btmodel="$(get_latest_model "$savedir/models/$model")"
+evauate_bleu "$stage" "$btmodel" "${baselanguages[*]}" "${newlanguages[*]}"
+
+prepare_backtranslation_data "$data_in" "${newlanguages[*]}" "${baselanguages[*]}"
+freezeenc= \
+    backtranslation_round "$basemodel" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
 btmodel="$(get_latest_model "$savedir/models/$model")"
 evauate_bleu "$stage" "$btmodel" "${newlanguages[*]}" "${baselanguages[*]}"
