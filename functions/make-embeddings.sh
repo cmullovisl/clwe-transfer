@@ -17,7 +17,7 @@ download_fasttext_model() {
 download_embeddings() {
     local lng
     for lng in "$@"; do
-        [[ -f ${embeddingsdir}/cc.${lng}.${embdim}.bin ]] || download_fasttext_model "$lng"
+        [[ -e ${embeddingsdir}/cc.${lng}.${embdim}.bin ]] || download_fasttext_model "$lng"
     done
 }
 
@@ -56,7 +56,7 @@ compute_alignments() {
 
     for lng in "$@"; do
         [[ $pivot = "$lng" ]] && continue
-        [[ -f $dictdir/$lng-$pivot ]] || download_dictionaries "$lng" "$pivot"
+        [[ -e $dictdir/$lng-$pivot ]] || download_dictionaries "$lng" "$pivot"
 
 
         # fasttext saves the aligned embeddings to the output file (`--output`)
