@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+
+basemodel="$1"
+sourcelanguages="$2"
+targetlanguages="$3"
+
+basespecials="$savedir/specials.pt"
+newspecials="$savedir/specials.pt"
+newvocab="$savedir/data.vocab.pt"
+
+extract_specials "$basemodel" "$basespecials"
+
+newlanguagecodes=()
+for lng in "${newlanguages[@]}"; do
+    newlanguagecodes+=("#${lng}#")
+done
+
+python "$SCRIPT_DIR"/scripts/vocab/add-specials.py \
+    "$basespecials" \
+    "$newlanguagecodes" \
+    "$newspecials"
+
+dset="train"
+sourceembeddings=()
+for lng in $sourcelanguages; do
+    sourceembeddings+=("$datadir/embeddings.$dset.$lng.vec")
+done
+targetmbeddings=()
+for lng in $targetlanguages; do
+    targetembeddings+=("$datadir/embeddings.$dset.$lng.vec")
+done
+
+python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
+    "$newspecials" \
+    <(cat "${sourceembeddings[@]}") \
+    <(cat "${targetembeddings[@]}") \
+    "$newvocab"

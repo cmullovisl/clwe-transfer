@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+
+stage="$1"
+model="$2"
+sourcelanguages="$3"
+targetlanguages="$4"
+
+modelname_regex='^\(.*\)_step_\([0-9]*\)\.pt$'
+modelname="$(basename "$model" | sed "s|${modelname_regex}|\1|")"
+iteration="$(basename "$model" | sed "s|${modelname_regex}|\2|")"
+result="$translationsdir/ted.multi_bleu.$stage.$iteration"
+
+mkdir -p "$translationsdir"
+echo "${modelname}_step_${iteration}.pt" | tee "$result"
+
+for src in $sourcelanguages; do
+    for tgt in $targetlanguages; do
+        [[ $src = "$tgt" ]] && continue
+
+        echo "$src-$tgt" | tee -a "$result"
+        for dset in dev test
+        do
+            [[ -f $evaldir/$dset.$src-$tgt.$src ]] || continue
+
+            translate "$model" "$src" "$tgt" "$dset"
+            calculate_bleu "$src" "$tgt" "$dset" | tee -a "$result"
+        done
+    done
+done
+
+cat "$result"

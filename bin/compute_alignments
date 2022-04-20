@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+# TODO choosable alignment method
+pivot="$1"
+
+
+for lng in "$@"; do
+    [[ $pivot = "$lng" ]] && continue
+    [[ -e $dictdir/$lng-$pivot ]] || download_dictionaries "$lng" "$pivot"
+
+
+    # fasttext saves the aligned embeddings to the output file (`--output`)
+    # and the alignment matrix to the output file + "-mat" suffix. Since we
+    # only require the matrix, we discard the embeddings by writing to
+    # /dev/null (through a symbolic link hack)
+    outfile="$embeddingsdir/aligned.$lng.vec"
+    ln -sf /dev/null "$outfile"
+
+    python -u "$fasttext"/alignment/align.py \
+        --src_emb "$embeddingsdir/cc.$lng.$embdim.vec" \
+        --tgt_emb "$embeddingsdir/cc.$pivot.$embdim.vec" \
+        --dico_train "$dictdir/$lng-$pivot.txt" \
+        --dico_test  "$dictdir/$lng-$pivot.0-5000.txt" \
+        --output "$outfile" 2>&1 | tee "$logdir/align.$lng.log"
+done
+
+python "$SCRIPT_DIR"/scripts/fasttext/write-eye.py \
+    "$embdim" > "$embeddingsdir/aligned.$pivot.vec-mat"

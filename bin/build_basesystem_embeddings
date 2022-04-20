@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+stage=base
+for dset in train dev test; do
+    out="$datadir/embeddings.$stage.$dset.vec"
+    echo "<linecount> ${embdim}" > "$out"
+    cat "$datadir/specials.vec" >> "$out"
+
+    for lng in "$@"; do
+        cat "$datadir/embeddings.$dset.$lng.vec" >> "$out"
+    done
+
+    sed -i "1s/<linecount>/$(tail -n +2 "$out" | wc -l)/" "$out"
+    tail -n +2 "$out" | embeddings_to_vocab > "$datadir/vocab.$stage.$dset.txt"
+done

@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+
+sourcelanguages="$1"
+targetlanguages="$2"
+
+for dset in dev test; do
+    for src in $sourcelanguages; do
+        for tgt in $targetlanguages; do
+            [[ $src = "$tgt" ]] && continue
+
+            cat "$data_in/$dset.$src-$tgt.$src" | preprocess_source_data "$src" "$tgt" > "$evaldir/$dset.$src-$tgt.$src"
+            cat "$data_in/$dset.$src-$tgt.$tgt" | strip_bpe > "$evaldir/$dset.$src-$tgt.$tgt"
+
+            "$SCRIPT_DIR"/scripts/preprocess/purge-empty-lines.sh "" \
+                "$evaldir/$dset.$src-$tgt.$src" "$evaldir/$dset.$src-$tgt.$tgt"
+        done
+    done
+done

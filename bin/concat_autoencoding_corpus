@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+stage="$1"
+languages="$2"
+
+rm -f "$datadir/train.$stage.src"
+rm -f "$datadir/train.$stage.tgt"
+rm -f "$datadir/dev.$stage.src"
+rm -f "$datadir/dev.$stage.tgt"
+
+for lng in $languages; do
+    for dset in train dev; do
+        cat "$data_in/$dset.$lng" | preprocess_source_data "$lng" "$lng" >> "$datadir/$dset.$stage.src"
+        cat "$data_in/$dset.$lng" | preprocess_target_data "$lng" "$lng" >> "$datadir/$dset.$stage.tgt"
+    done
+done
+
+echo "shuffling..."
+shuffle_corpus "train"

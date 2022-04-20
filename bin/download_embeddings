@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+for lng in "$@"; do
+    [[ -e ${embeddingsdir}/cc.${lng}.${embdim}.bin ]] || download_fasttext_model "$lng"
+done

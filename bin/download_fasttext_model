@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+lng="$1"
+fasttext_url="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl"
+nvectors=200000
+
+curl "${fasttext_url}/cc.${lng}.${embdim}.bin.gz" |
+    gunzip > "$embeddingsdir/cc.${lng}.${embdim}.bin"
+
+# Download only the first `$nvectors` word vectors, since 2.000.000 vectors
+# is an excessive amount. Use `|| true` to suppress curl error as to not
+# crash the whole script due to Bash `pipefail` option.
+curl "${fasttext_url}/cc.${lng}.${embdim}.vec.gz" |
+    gunzip | sed "1s/^[1-9][0-9]*/${nvectors}/" |
+    head -n "$((nvectors+1))" > "$embeddingsdir/cc.${lng}.${embdim}.vec" || true

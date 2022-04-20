@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+
+dataset_to_embeddings() {
+    # reads data set from stdin
+    local lng="$1"
+    sed 's/\@\@ //g' |
+        "$SCRIPT_DIR"/scripts/vocab/extract-words.py |
+        map_words "$lng" |
+        post_process "$lng"
+}
+
+for dset in train dev test; do
+    for lng in "$@"; do
+        cat "$data_in/$dset.$lng" |
+            dataset_to_embeddings "$lng" > "$datadir/embeddings.$dset.$lng.vec"
+    done
+done

@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+stage="$1"
+dset=train
+
+# TODO move this into run.sh?
+savedir="$projectroot/saves.$stage"
+
+python -u "$onmt"/preprocess.py \
+    -train_src "$datadir/train.$stage.src" \
+    -train_tgt "$datadir/train.$stage.tgt" \
+    -valid_src "$datadir/dev.$stage.src" \
+    -valid_tgt "$datadir/dev.$stage.tgt" \
+    -src_vocab "$datadir/vocab.$stage.$dset.txt" \
+    -tgt_vocab "$datadir/vocab.$stage.$dset.txt" \
+    -save_data "$savedir/data" \
+    -tgt_emb "$datadir/embeddings.$stage.$dset.vec" \
+    -src_vocab_size 1000000 \
+    -tgt_vocab_size 1000000 \
+    -src_seq_length 100 \
+    -tgt_seq_length 100 |& tee "$logdir/preprocess.log"
