@@ -1,0 +1,10 @@
+md5: 23436932e0e91d2100459f1656239d32
+frozen: true
+deps:
+- checksum: '"14fe7b5d-569fd0b199160"'
+  size: 352222045
+  path: http://phontron.com/data/ted_talks.tar.gz
+outs:
+- md5: 3b0e6bd34269d7a1529710d1e13357d0
+  size: 352222045
+  path: ted_talks.tar.gz
