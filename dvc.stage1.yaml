@@ -1,0 +1,102 @@
+vars:
+  - stage: base
+  - baselanguages: "en de es fr it"
+  - clwepivot: "en"
+
+stages:
+  download_embeddings:
+    cmd: download_embeddings "${baselanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "embeddings/models/"
+
+  compute_alignments:
+    cmd: compute_alignments "${clwepivot}" "${baselanguages}"
+    deps:
+    - "embeddings/models/"
+    - "embeddings/dicts/"
+    outs:
+    - "embeddings/align/"
+
+  prepare_data:
+    cmd: prepare_data
+    deps:
+    - "/dev/null"
+    outs:
+    - "data/raw/parallel/"
+
+  prepare_monolingual_data:
+    cmd: prepare_monolingual_data "${baselanguages}" "${baselanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "data/raw/monolingual/"
+
+  generate_specials:
+    cmd: generate_specials "$embdim" "${baselanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "data/specials.vec"
+
+  build_embeddings:
+    cmd: build_embeddings "${baselanguages}"
+    deps:
+    - "extract-words.py"
+    - "data/raw/monolingual/"
+    - "embeddings/align/"
+    - "embeddings/raw/"
+    outs:
+    - "data/embeddings/"
+
+  build_basesystem_embeddings:
+    cmd: build_basesystem_embeddings "${baselanguages}"
+    deps:
+    - "data/embeddings/"
+    - "data/specials.vec"
+    outs:
+    - "data/vocab/"
+    # XXX concatenated embeddings, change name
+    - "data/allembeddings/"
+
+  concat_data:
+    cmd: concat_data "${stage}" "${baselanguages}" "${baselanguages}"
+    deps:
+    - "data/raw/parallel/"
+    outs:
+    - "data/corpus/"
+
+  preprocess:
+    cmd: preprocess "${stage}"
+    deps:
+    - "data/corpus/"
+    - "data/vocab/"
+    - "data/allembeddings/"
+    outs:
+    - "saves/${stage}/"
+
+  train:
+    cmd: train "${stage}" "$model" "$baseconfig"
+    deps:
+    - "saves/${stage}/"
+    outs:
+    - "models/${stage}/"
+    metrics:
+    - "logs/${stage}/"
+
+  preprocess_evaluation_data:
+    cmd: preprocess_evaluation_data "${baselanguages}" "${baselanguages}"
+    deps:
+    - "data/raw/parallel/"
+    outs:
+    - "data/eval/"
+
+  evauate_bleu:
+    cmd: evauate_bleu "$stage" "$basemodel" "${baselanguages}" "${baselanguages}"
+    deps:
+    - "models/${stage}/"
+    - "data/eval/"
+    outs:
+    - "translations/${stage}/"
+    - "scores/${stage}/"

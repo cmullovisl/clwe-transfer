@@ -1,0 +1,169 @@
+vars:
+  - stage: newlang
+  - baselanguages: "en de es fr it"
+  - newlanguages: "pt"
+  - clwepivot: "en"
+
+stages:
+  # set_stage "newlang"
+  download_embeddings:
+    cmd: download_embeddings "${newlanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "embeddings/models/"
+
+  compute_alignments:
+    cmd: compute_alignments "${clwepivot}" "${newlanguages}"
+    deps:
+    - "embeddings/models/"
+    - "embeddings/dicts/"
+    outs:
+    - "embeddings/align/"
+
+  prepare_monolingual_data:
+    cmd: prepare_monolingual_data "${newlanguages}" "${baselanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "data/raw/monolingual/"
+
+  build_embeddings:
+    cmd: build_embeddings "${newlanguages}"
+    deps:
+    - "extract-words.py"
+    - "data/raw/monolingual/"
+    - "embeddings/align/"
+    - "embeddings/raw/"
+    outs:
+    - "data/embeddings/"
+
+  # set_stage "blindenc"
+  prepare_evaluation_data:
+    cmd: prepare_evaluation_data "${newlanguages}" "${baselanguages}"
+    deps:
+    - "/dev/null"
+    outs:
+    - "data/raw/parallel_for_eval/"
+
+  preprocess_evaluation_data:
+    cmd: preprocess_evaluation_data "${newlanguages}" "${baselanguages}"
+    deps:
+    - "data/raw/parallel_for_eval/"
+    outs:
+    - "data/eval/"
+
+  evauate_bleu_blindenc:
+    cmd: evauate_bleu "blindenc" "$basemodel" "${newlanguages}" "${baselanguages}"
+    deps:
+    - "models/base.pt"
+    - "data/eval/"
+    outs:
+    - "translations/blindenc/"
+    - "scores/blindenc/"
+
+  evauate_bleu_blinddec:
+    cmd: evauate_bleu "blinddec" "$basemodel" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "models/base.pt"
+    - "data/eval/"
+    outs:
+    - "translations/blinddec/"
+    - "scores/blinddec/"
+
+  # set_stage "autoencoder"
+  build_newlang_vocab:
+    cmd: build_newlang_vocab "$basemodel" "${newlanguages}" "${newlanguages}"
+    deps:
+    - "data/specials.vec" 
+    - "data/embeddings/" 
+    outs:
+    - "data/data.vocab.pt"
+
+  concat_autoencoding_corpus:
+    cmd: concat_autoencoding_corpus "autoencoder" "${newlanguages}"
+    deps:
+    - "data/raw/monolingual/"
+    outs:
+    - "data/corpus/"
+
+  preprocess_reuse_vocab:
+    cmd: preprocess_reuse_vocab "autoencoder" "$savedir/data.vocab.pt"
+    deps:
+    - "data/corpus/"
+    - "data/data.vocab.pt"
+    outs:
+    - "saves/autoencoder/"
+
+  train_continue_autoencode:
+    cmd: train_continue "autoencoder" "$model" "$autoencoderconfig" "$basemodel"
+    deps:
+    - "saves/autoencoder/"
+    outs:
+    - "models/autoencoder/"
+    metrics:
+    - "logs/autoencoder/"
+
+  evauate_bleu_autoencode:
+    cmd: evauate_bleu "autoencoder" "$aemodel" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "models/autoencoder/"
+    - "data/eval/"
+    outs:
+    - "translations/autoencoder/"
+    - "scores/autoencoder/"
+
+  # set_stage "backtranslate"
+  prepare_backtranslation_data_round1:
+    cmd: prepare_backtranslation_data "$data_in" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "data/raw/monolingual/"
+    outs:
+    - "data/bt/src/round1/"
+
+  backtranslation_round_round1:
+    cmd: freezeenc=y backtranslation_round "$basemodel" "$btmodel" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "data/bt/src/round1/"
+    - "models/bt/round0/"
+    - "models/bt/basemodel/"
+    outs:
+    #- "data/bt/tgt/round1/"
+    - "models/bt/round1/"
+
+  evauate_bleu_backtranslation_round1:
+    cmd: evauate_bleu "backtranslate" "$btmodel" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "models/bt/round1/"
+    - "models/backtranslate/round1/"
+    - "data/eval/"
+    outs:
+    - "translations/backtranslate/round1/"
+    - "scores/backtranslate/round1/"
+
+  prepare_backtranslation_data_round2:
+    cmd: prepare_backtranslation_data "$data_in" "${newlanguages}" "${baselanguages}"
+    deps:
+    - "data/raw/monolingual/"
+    outs:
+    - "data/bt/src/round2/"
+
+  backtranslation_round_round2:
+    cmd: freezeenc= backtranslation_round "$basemodel" "$btmodel" "${newlanguages}" "${baselanguages}"
+    deps:
+    - "data/bt/src/round2/"
+    - "models/bt/round1/"
+    - "models/bt/basemodel/"
+    outs:
+    #- "data/bt/tgt/round2/"
+    - "models/bt/round2/"
+
+  evauate_bleu_backtranslation_round2:
+    cmd: evauate_bleu "backtranslate" "$btmodel" "${newlanguages}" "${baselanguages}"
+    deps:
+    - "models/bt/round2/"
+    - "models/backtranslate/round2"
+    - "data/eval/"
+    outs:
+    - "translations/backtranslate/round2/"
+    - "scores/backtranslate/round2/"
