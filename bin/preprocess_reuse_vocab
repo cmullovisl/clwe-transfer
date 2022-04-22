@@ -9,7 +9,7 @@ savedir="$projectroot/saves.$stage"
 
 # preprocess.py accepts existing vocab.pt files in its `-src_vocab` option.
 # This serialized fields dict may also contain the target side vocab.
-python -u "$onmt"/preprocess.py \
+onmt_preprocess \
     -train_src "$datadir/train.$stage.src" \
     -train_tgt "$datadir/train.$stage.tgt" \
     -valid_src "$datadir/dev.$stage.src" \

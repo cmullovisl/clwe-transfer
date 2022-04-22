@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+src="$1"
+tgt="$2"
+shift 2
+
+sed "s/^/#${tgt}# /" "$@" | sed "s/ / ${src}@/g"

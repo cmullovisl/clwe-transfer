@@ -13,7 +13,7 @@ backtranslate_translate() {
     local beamsize=4
     local batchsize=4000
 
-    python -u "$onmt"/translate.py \
+    onmt_translate \
         -batch_type tokens \
         -batch_size "$batchsize" \
         -beam_size "$beamsize" \
@@ -55,7 +55,8 @@ backtranslate() {
     done
 
     # FIXME defined somewhere else
-    datadir="$btdir" shuffle_corpus "train"
+    #datadir="$btdir" shuffle_corpus "train"
+    shuffle_corpus "$btdir/train.$stage"
 }
 
 basemodel="$1"

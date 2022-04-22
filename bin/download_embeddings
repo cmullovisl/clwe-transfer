@@ -1,6 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
+#for lng in "$@"; do
+#    [[ -e ${embeddingsdir}/cc.${lng}.${embdim}.bin ]] || download_fasttext_model "$lng"
+#done
+
+fasttext_url="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl"
+
 for lng in "$@"; do
-    [[ -e ${embeddingsdir}/cc.${lng}.${embdim}.bin ]] || download_fasttext_model "$lng"
+    nvectors=200000
+    embdim=300
+
+    curl "${fasttext_url}/cc.${lng}.${embdim}.bin.gz" |
+        gunzip > "cc.${lng}.${embdim}.bin"
+
+    # Download only the first `$nvectors` word vectors, since 2.000.000 vectors
+    # is an excessive amount. Use `|| true` to suppress curl error as to not
+    # crash the whole script due to Bash `pipefail` option.
+    curl "${fasttext_url}/cc.${lng}.${embdim}.vec.gz" |
+        gunzip | sed "1s/^[1-9][0-9]*/${nvectors}/" |
+        head -n "$((nvectors+1))" > "cc.${lng}.${embdim}.vec" || true
 done

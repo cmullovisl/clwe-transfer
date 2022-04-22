@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $delimiter = "\t";
+
+if ($ARGV[0] eq "-d") {
+    shift;
+    $delimiter = shift;
+}
+
+my @out_files = ();
+for (@ARGV) {
+    open(my $F, '>', $_) or die "Couldn't open $_ for writing.";
+    push(@out_files, ($F));
+}
+
+while (<STDIN>) {
+    my @parts = split($delimiter, $_, $#out_files+1);
+    for my $i (0 .. $#out_files) {
+        chomp $parts[$i];
+        print { $out_files[$i] } $parts[$i], "\n";
+    }
+}

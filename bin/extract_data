@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+
+languages="$1"
+
+mkdir -p extracted
+tar -C extracted/ -xf ted_talks.tar.gz
+
+for lng in $languages; do
+    for dset in train dev test; do
+        talk="extracted/all_talks_$dset.tsv"
+
+        field=$(head -1 < "$talk" |
+            python -c "print(input().split('\\t').index('$lng')+1)")
+        tail -n +2 < "$talk" |
+            cut -d$'\t' -f"$field" > "extracted/$dset.$lng"
+    done
+done

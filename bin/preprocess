@@ -2,21 +2,24 @@
 set -euo pipefail
 
 stage="$1"
-dset=train
 
-# TODO move this into run.sh?
-savedir="$projectroot/saves.$stage"
+data_dir="data/corpus"
+vocab_dir="data/vocab"
+embedding_dir="data/allembeddings"
+save_dir="saves/$stage"
+log_dir="$save_dir"
 
-python -u "$onmt"/preprocess.py \
-    -train_src "$datadir/train.$stage.src" \
-    -train_tgt "$datadir/train.$stage.tgt" \
-    -valid_src "$datadir/dev.$stage.src" \
-    -valid_tgt "$datadir/dev.$stage.tgt" \
-    -src_vocab "$datadir/vocab.$stage.$dset.txt" \
-    -tgt_vocab "$datadir/vocab.$stage.$dset.txt" \
-    -save_data "$savedir/data" \
-    -tgt_emb "$datadir/embeddings.$stage.$dset.vec" \
+mkdir -p "$save_dir"
+onmt_preprocess \
+    -train_src "$data_dir/train.$stage.src" \
+    -train_tgt "$data_dir/train.$stage.tgt" \
+    -valid_src "$data_dir/dev.$stage.src" \
+    -valid_tgt "$data_dir/dev.$stage.tgt" \
+    -src_vocab "$vocab_dir/vocab.$stage.txt" \
+    -tgt_vocab "$vocab_dir/vocab.$stage.txt" \
+    -tgt_emb "$embedding_dir/embeddings.$stage.vec" \
+    -save_data "$save_dir/data" \
     -src_vocab_size 1000000 \
     -tgt_vocab_size 1000000 \
     -src_seq_length 100 \
-    -tgt_seq_length 100 |& tee "$logdir/preprocess.log"
+    -tgt_seq_length 100 |& tee "$log_dir/preprocess.log"

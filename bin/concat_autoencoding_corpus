@@ -17,4 +17,4 @@ for lng in $languages; do
 done
 
 echo "shuffling..."
-shuffle_corpus "train"
+shuffle_corpus "$output_dir/train.$stage"

@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+
+dsets="$1"
+languages="$2"
+
+input_dir="extracted"
+output_dir="parallel"
+
+
+filter() {
+    # TODO smartcase
+    grep -v -E '_ ?_ ?NULL ?_ ?_'
+}
+
+mkdir -p "$output_dir"
+for dset in $dsets; do
+    for src in $languages; do
+        for tgt in $languages; do
+            paste "$input_dir/$dset.$src" "$input_dir/$dset.$tgt" |
+                filter |
+                unpaste "$output_dir/$dset.$src-$tgt.$src" "$output_dir/$dset.$src-$tgt.$tgt"
+        done
+    done
+done

@@ -1,0 +1,23 @@
+#!/bin/bash
+set -euo pipefail
+
+embeddingdir="embeddings"
+embdim=300
+
+lng="$1"
+
+map_words() {
+    local lng="$1"
+    local ftmodel="$embeddingdir/models/cc.${lng}.${embdim}.bin"
+    local matrix="$embeddingdir/align/aligned.${lng}.vec-mat"
+    map-vector.py "$ftmodel" "$matrix"
+}
+
+post_process() {
+    local lng="$1"
+    sed "s/^/${lng}@/"
+}
+
+extract-words.py |
+    map_words "$lng" |
+    post_process "$lng"

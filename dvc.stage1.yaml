@@ -1,71 +1,100 @@
 vars:
   - stage: base
   - baselanguages: "en de es fr it"
+  - baselanguages_list: ["en", "de", "es", "fr", "it"]
   - clwepivot: "en"
+  - embdim: 300
+  - model: "continuous"
+  - baseconfig: "train-base"
 
 stages:
+  #download_embeddings:
+  #  cmd: download_embeddings "${baselanguages}"
+  #  deps:
+  #  - "/dev/null"
+  #  outs:
+  #  - "embeddings/models/"
   download_embeddings:
-    cmd: download_embeddings "${baselanguages}"
-    deps:
-    - "/dev/null"
-    outs:
-    - "embeddings/models/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: download_embeddings "${item}"
+      wdir: "embeddings/models"
+      deps:
+      - "/dev/null"
+      outs:
+      - "cc.${item}.${embdim}.vec"
+      - "cc.${item}.${embdim}.bin"
 
   compute_alignments:
     cmd: compute_alignments "${clwepivot}" "${baselanguages}"
+    wdir: "embeddings"
     deps:
-    - "embeddings/models/"
-    - "embeddings/dicts/"
+    - "models/"
+    - "dicts/"
     outs:
-    - "embeddings/align/"
+    - "align/"
 
-  prepare_data:
-    cmd: prepare_data
+  extract_data:
+    cmd: extract_data "${baselanguages}"
+    wdir: "data"
     deps:
-    - "/dev/null"
+    - "ted_talks.tar.gz"
     outs:
-    - "data/raw/parallel/"
+    - "extracted/"
+
+  prepare_parallel_data:
+    cmd: prepare_parallel_data "train dev test" "${baselanguages}"
+    wdir: "data"
+    deps:
+    - "extracted/"
+    outs:
+    - "parallel/"
 
   prepare_monolingual_data:
-    cmd: prepare_monolingual_data "${baselanguages}" "${baselanguages}"
+    cmd: prepare_monolingual_data "${baselanguages}"
+    wdir: "data"
     deps:
-    - "/dev/null"
+    - "extracted/"
     outs:
-    - "data/raw/monolingual/"
+    - "monolingual/"
 
   generate_specials:
-    cmd: generate_specials "$embdim" "${baselanguages}"
+    #cmd: generate_specials "$embdim" "${baselanguages}"
+    cmd: generate-specials.py "${embdim}" ${baselanguages} > "specials.vec"
+    wdir: "data"
     deps:
     - "/dev/null"
     outs:
-    - "data/specials.vec"
+    - "specials.vec"
 
   build_embeddings:
     cmd: build_embeddings "${baselanguages}"
     deps:
-    - "extract-words.py"
-    - "data/raw/monolingual/"
+    #- "extract-words.py"
+    - "data/monolingual/"
     - "embeddings/align/"
-    - "embeddings/raw/"
+    - "embeddings/models/"
     outs:
     - "data/embeddings/"
 
   build_basesystem_embeddings:
     cmd: build_basesystem_embeddings "${baselanguages}"
+    wdir: "data"
     deps:
-    - "data/embeddings/"
-    - "data/specials.vec"
+    - "embeddings/"
+    - "specials.vec"
     outs:
-    - "data/vocab/"
+    - "vocab/"
     # XXX concatenated embeddings, change name
-    - "data/allembeddings/"
+    - "allembeddings/"
 
   concat_data:
     cmd: concat_data "${stage}" "${baselanguages}" "${baselanguages}"
+    wdir: "data"
     deps:
-    - "data/raw/parallel/"
+    - "parallel/"
     outs:
-    - "data/corpus/"
+    - "corpus/"
 
   preprocess:
     cmd: preprocess "${stage}"
@@ -77,7 +106,7 @@ stages:
     - "saves/${stage}/"
 
   train:
-    cmd: train "${stage}" "$model" "$baseconfig"
+    cmd: train "${stage}" "${model}" "${baseconfig}"
     deps:
     - "saves/${stage}/"
     outs:
@@ -85,18 +114,20 @@ stages:
     metrics:
     - "logs/${stage}/"
 
-  preprocess_evaluation_data:
-    cmd: preprocess_evaluation_data "${baselanguages}" "${baselanguages}"
-    deps:
-    - "data/raw/parallel/"
-    outs:
-    - "data/eval/"
+  #preprocess_evaluation_data:
+  #  cmd: preprocess_evaluation_data "${baselanguages}" "${baselanguages}"
+  #  wdir: "data"
+  #  deps:
+  #  - "parallel/"
+  #  outs:
+  #  - "eval/"
 
   evauate_bleu:
-    cmd: evauate_bleu "$stage" "$basemodel" "${baselanguages}" "${baselanguages}"
+    cmd: evauate_bleu "$stage" "${baselanguages}" "${baselanguages}"
     deps:
     - "models/${stage}/"
-    - "data/eval/"
+    #- "data/eval/"
+    - "data/parallel/"
     outs:
     - "translations/${stage}/"
     - "scores/${stage}/"

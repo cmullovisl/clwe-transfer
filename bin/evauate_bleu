@@ -2,29 +2,35 @@
 set -euo pipefail
 
 stage="$1"
-model="$2"
-sourcelanguages="$3"
-targetlanguages="$4"
+#model="$2"
+#sourcelanguages="$3"
+#targetlanguages="$4"
+sourcelanguages="$2"
+targetlanguages="$3"
 
-modelname_regex='^\(.*\)_step_\([0-9]*\)\.pt$'
-modelname="$(basename "$model" | sed "s|${modelname_regex}|\1|")"
-iteration="$(basename "$model" | sed "s|${modelname_regex}|\2|")"
-result="$translationsdir/ted.multi_bleu.$stage.$iteration"
+dsets="dev test"
 
-mkdir -p "$translationsdir"
-echo "${modelname}_step_${iteration}.pt" | tee "$result"
+eval_dir="data/parallel"
+translations_dir="translations/$stage"
+result_dir="scores"
+results="$result_dir/$stage.jsonl"
+model="models/$stage/model_avg.pt"
 
+mkdir -p "$translations_dir" "$result_dir"
 for src in $sourcelanguages; do
     for tgt in $targetlanguages; do
         [[ $src = "$tgt" ]] && continue
 
-        echo "$src-$tgt" | tee -a "$result"
-        for dset in dev test
-        do
-            [[ -f $evaldir/$dset.$src-$tgt.$src ]] || continue
+        #echo "$src-$tgt" | tee -a "$result"
+        for dset in $dsets; do
+            [[ -f $eval_dir/$dset.$src-$tgt.$src ]] || continue
 
-            translate "$model" "$src" "$tgt" "$dset"
-            calculate_bleu "$src" "$tgt" "$dset" | tee -a "$result"
+            input="$eval_dir/$dset.$src-$tgt.$src"
+            reference="$eval_dir/$dset.$src-$tgt.$tgt"
+            output="$translations_dir/$dset.$src-$tgt.$tgt.pred"
+            translate "$model" "$src" "$tgt" "$dset" < "$input" > "$output"
+            sacrebleu -l "$src-$tgt" "$reference" < "$output" | tee -a "$result"
+            #calculate_bleu "$src" "$tgt" "$dset" | tee -a "$result"
         done
     done
 done

@@ -1,16 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
+embeddings_dir="embeddings"
+output_dir="allembeddings"
+vocab_dir="vocab"
+
+languages="$1"
+embdim=300
+
+embeddings_to_vocab() {
+    # assumes absence of duplicate entries
+    # TODO handle header line if present
+    cut -d' ' -f1
+}
+
 stage=base
-for dset in train dev test; do
-    out="$datadir/embeddings.$stage.$dset.vec"
-    echo "<linecount> ${embdim}" > "$out"
-    cat "$datadir/specials.vec" >> "$out"
+mkdir "$output_dir" "$vocab_dir"
+#out="$output_dir/embeddings.$stage.$dset.vec"
+out="$output_dir/embeddings.$stage.vec"
+echo "<linecount> ${embdim}" > "$out"
+cat "specials.vec" >> "$out"
 
-    for lng in "$@"; do
-        cat "$datadir/embeddings.$dset.$lng.vec" >> "$out"
-    done
-
-    sed -i "1s/<linecount>/$(tail -n +2 "$out" | wc -l)/" "$out"
-    tail -n +2 "$out" | embeddings_to_vocab > "$datadir/vocab.$stage.$dset.txt"
+for lng in $languages; do
+    cat "$embeddings_dir/embeddings.$lng.vec" >> "$out"
 done
+
+sed -i "1s/<linecount>/$(tail -n +2 "$out" | wc -l)/" "$out"
+tail -n +2 "$out" | embeddings_to_vocab > "$vocab_dir/vocab.$stage.txt"
