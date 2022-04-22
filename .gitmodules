@@ -1,0 +1,4 @@
+[submodule "seq2seq-con"]
+	path = seq2seq-con
+	url = i13hpc1.ira.uka.de:barerepos/seq2seq-con
+	branch = ma-continuation

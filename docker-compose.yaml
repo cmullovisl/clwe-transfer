@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+  develop:
+    image: "clwe-transfer:0.1"
+    build: .
+    command: "bash"
+    shm_size: '8gb'
+    volumes:
+      - "./data/ted_talks.tar.gz:/experiment/data/ted_talks.tar.gz:ro"
+      - "./bin:/host/bin:ro"
+      #- "./dvc.stage1.yaml:/experiment/dvc.yaml:ro"
+      - ".:/src:ro"
+    environment:
+      PATH: "/host/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
