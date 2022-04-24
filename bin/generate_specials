@@ -1,4 +1,0 @@
-#!/bin/bash
-set -euo pipefail
-
-python "$SCRIPT_DIR"/scripts/vocab/generate-specials.py "$embdim" "$@" > "$datadir/specials.vec"
