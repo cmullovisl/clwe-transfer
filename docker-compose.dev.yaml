@@ -1,0 +1,12 @@
+version: "3.3"
+
+services:
+  stage1:
+    volumes:
+      - "./dvc.stage1.yaml:/src/dvc.yaml"
+      - "./bin:/src/bin:ro"
+      - "./onmt_vocab_utils:/src/onmt_vocab_utils:ro"
+      - "./seq2seq-con:/src/seq2seq-con:ro"
+    environment:
+      PATH: "/src/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      PYTHONPATH: "/src/onmt_vocab_utils:/src/seq2seq-con/OpenNMT-py"

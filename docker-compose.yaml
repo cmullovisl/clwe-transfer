@@ -1,15 +1,17 @@
 version: "3.3"
 
 services:
-  develop:
-    image: "clwe-transfer:0.1"
+  stage1:
+    image: "clwe-transfer-stage1:0.2.2"
     build: .
-    command: "bash"
-    shm_size: '8gb'
+    shm_size: "8gb"
     volumes:
-      - "./data/ted_talks.tar.gz:/experiment/data/ted_talks.tar.gz:ro"
-      - "./bin:/host/bin:ro"
-      #- "./dvc.stage1.yaml:/experiment/dvc.yaml:ro"
-      - ".:/src:ro"
-    environment:
-      PATH: "/host/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      - "${RUN_DIR}/dvc-cache:/src/.dvc/cache"
+      - "${RUN_DIR}/embeddings:/src/embeddings"
+      - "${RUN_DIR}/data:/src/data"
+      - "${RUN_DIR}/models:/src/models"
+      - "${RUN_DIR}/saves:/src/saves"
+      - "${RUN_DIR}/metrics:/src/metrics"
+      - "${RUN_DIR}/translations:/src/translations"
+      - "${RUN_DIR}/scores:/src/scores"
+      - "./config:/src/config:ro"
