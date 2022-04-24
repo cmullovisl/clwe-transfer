@@ -33,12 +33,6 @@ onmt_translate \
     -src_embeddings "$embedding_dir/embeddings.$src.vec" \
     -tgt_embeddings "$embedding_dir/embeddings.$tgt.vec" 1>&2
 
-#    -src "$evaldir/$dset.$src-$tgt.$src" \
-#    -output "$translationsdir/$dset.$src-$tgt.$tgt.pred" \
-#    -src_embeddings "$datadir/embeddings.$dset.$src.vec" \
-#    -tgt_embeddings "$datadir/embeddings.train.$tgt.vec"
-
-
 postprocess() {
     sed "s/${tgt}@//g"
 }

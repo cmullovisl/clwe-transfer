@@ -16,7 +16,6 @@ embeddings_to_vocab() {
 
 stage=base
 mkdir "$output_dir" "$vocab_dir"
-#out="$output_dir/embeddings.$stage.$dset.vec"
 out="$output_dir/embeddings.$stage.vec"
 echo "<linecount> ${embdim}" > "$out"
 cat "specials.vec" >> "$out"

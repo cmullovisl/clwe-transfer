@@ -23,3 +23,5 @@ onmt_preprocess \
     -tgt_vocab_size 1000000 \
     -src_seq_length 100 \
     -tgt_seq_length 100 |& tee "$log_dir/preprocess.log"
+
+extract_embeddings.py "$save_dir/data.vocab.pt" "$save_dir"

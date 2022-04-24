@@ -5,15 +5,8 @@ data_dir="data/monolingual"
 output_dir="data/embeddings"
 
 languages="$1"
-#dsets="train test"
 
 mkdir -p "$output_dir"
-#for dset in $dsets; do
-#    for lng in $languages; do
-#        cat "$data_dir/$dset.$lng" |
-#            dataset_to_embeddings "$lng" > "$output_dir/embeddings.$lng.vec"
-#    done
-#done
 for lng in $languages; do
     cat "$data_dir/train.$lng" |
         dataset_to_embeddings "$lng" > "$output_dir/embeddings.$lng.vec"

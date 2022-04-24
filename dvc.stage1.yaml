@@ -30,8 +30,8 @@ stages:
     wdir: "embeddings"
     deps:
     - "models/"
-    - "dicts/"
     outs:
+    - "dicts/"
     - "align/"
 
   extract_data:
@@ -59,7 +59,6 @@ stages:
     - "monolingual/"
 
   generate_specials:
-    #cmd: generate_specials "$embdim" "${baselanguages}"
     cmd: generate-specials.py "${embdim}" ${baselanguages} > "specials.vec"
     wdir: "data"
     deps:
@@ -114,18 +113,18 @@ stages:
     metrics:
     - "logs/${stage}/"
 
-  #preprocess_evaluation_data:
-  #  cmd: preprocess_evaluation_data "${baselanguages}" "${baselanguages}"
-  #  wdir: "data"
-  #  deps:
-  #  - "parallel/"
-  #  outs:
-  #  - "eval/"
-
-  evauate_bleu:
-    cmd: evauate_bleu "$stage" "${baselanguages}" "${baselanguages}"
+  average_models:
+    #cmd: onmt_average_models -m models/${stage}/* -o models/${stage}_avg.pt
+    cmd: onmt_average_models -m models/${stage}/*_[7-9]0000.pt -o models/${stage}_avg.pt
     deps:
     - "models/${stage}/"
+    outs:
+    - "models/${stage}_avg.pt"
+
+  evauate_bleu:
+    cmd: evauate_bleu "${stage}" "${baselanguages}" "${baselanguages}"
+    deps:
+    - "models/${stage}_avg.pt"
     #- "data/eval/"
     - "data/parallel/"
     outs:

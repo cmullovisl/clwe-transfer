@@ -16,8 +16,8 @@ download_dictionaries() {
     local tgt="$2"
 
     local dict_url="https://dl.fbaipublicfiles.com/arrival/dictionaries"
-    curl "${dict_url}/$src-$tgt.txt" > "$dict_dir/$src-$tgt.txt"
-    curl "${dict_url}/$src-$tgt.0-5000.txt" > "$dict_dir/$src-$tgt.0-5000.txt"
+    curl -# "${dict_url}/$src-$tgt.txt" > "$dict_dir/$src-$tgt.txt"
+    curl -# "${dict_url}/$src-$tgt.0-5000.txt" > "$dict_dir/$src-$tgt.0-5000.txt"
 }
 
 mkdir -p "$dict_dir" "$output_dir"
@@ -31,7 +31,6 @@ for lng in $languages; do
     # and the alignment matrix to the output file + "-mat" suffix. Since we
     # only require the matrix, we discard the embeddings by writing to
     # /dev/null (through a symbolic link hack)
-    #outfile="$embeddingsdir/aligned.$lng.vec"
     outfile="$output_dir/aligned.$lng.vec"
     ln -sf /dev/null "$outfile"
 
@@ -42,6 +41,8 @@ for lng in $languages; do
         --dico_train "$dict_dir/$lng-$pivot.txt" \
         --dico_test  "$dict_dir/$lng-$pivot.0-5000.txt" \
         --output "$outfile" # 2>&1 | tee "$logdir/align.$lng.log"
+
+    rm "$outfile"
 done
 
 #python "$SCRIPT_DIR"/scripts/fasttext/write-eye.py \
