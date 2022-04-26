@@ -2,3 +2,6 @@
 	path = seq2seq-con
 	url = i13hpc1.ira.uka.de:barerepos/seq2seq-con
 	branch = ma-continuation
+[submodule "fastText"]
+	path = fastText
+	url = https://github.com/facebookresearch/fastText
