@@ -16,8 +16,8 @@ download_dictionaries() {
     local tgt="$2"
 
     local dict_url="https://dl.fbaipublicfiles.com/arrival/dictionaries"
-    curl -# "${dict_url}/$src-$tgt.txt" > "$dict_dir/$src-$tgt.txt"
-    curl -# "${dict_url}/$src-$tgt.0-5000.txt" > "$dict_dir/$src-$tgt.0-5000.txt"
+    curl -# "${dict_url}/$src-$tgt.txt" | tr '\t' ' ' > "$dict_dir/$src-$tgt.txt"
+    curl -# "${dict_url}/$src-$tgt.0-5000.txt" | tr '\t' ' ' > "$dict_dir/$src-$tgt.0-5000.txt"
 }
 
 mkdir -p "$dict_dir" "$output_dir"

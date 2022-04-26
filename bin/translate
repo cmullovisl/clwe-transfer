@@ -6,13 +6,11 @@ embedding_dir="data/embeddings"
 #model="$1"
 #src="$2"
 #tgt="$3"
-#dset="$4"
 model="$1"
 #input="$2"
 #output="$3"
 src="$2"
 tgt="$3"
-dset="${4:-test}"
 
 GPU=${GPU:-0}
 beamsize=${beamsize:-1}
@@ -20,18 +18,20 @@ batchsize=${batchsize:-4000}
 
 input=$(mktemp)
 output=$(mktemp)
-preprocess_source_data "$src" "$tgt" > "$input"
+embeddings=$(mktemp)
 
+cat >> "$input"
 onmt_translate \
     -batch_type tokens \
     -batch_size "$batchsize" \
     -beam_size "$beamsize" \
     -gpu "$GPU" \
     -model "$model" \
-    -src "$input" \
+    -src <(preprocess_source_data "$src" "$tgt" < "$input") \
     -output "$output" \
-    -src_embeddings "$embedding_dir/embeddings.$src.vec" \
+    -src_embeddings <(dataset_to_embeddings "$src" < "$input") \
     -tgt_embeddings "$embedding_dir/embeddings.$tgt.vec" 1>&2
+
 
 postprocess() {
     sed "s/${tgt}@//g"

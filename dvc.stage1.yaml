@@ -114,8 +114,7 @@ stages:
     - "logs/${stage}/"
 
   average_models:
-    #cmd: onmt_average_models -m models/${stage}/* -o models/${stage}_avg.pt
-    cmd: onmt_average_models -m models/${stage}/*_[7-9]0000.pt -o models/${stage}_avg.pt
+    cmd: onmt_average_models -m models/${stage}/*.pt -o models/${stage}_avg.pt
     deps:
     - "models/${stage}/"
     outs:
@@ -127,6 +126,7 @@ stages:
     - "models/${stage}_avg.pt"
     #- "data/eval/"
     - "data/parallel/"
+    - "data/embeddings/"
     outs:
     - "translations/${stage}/"
     - "scores/${stage}/"

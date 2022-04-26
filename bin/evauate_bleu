@@ -28,7 +28,7 @@ for src in $sourcelanguages; do
             input="$eval_dir/$dset.$src-$tgt.$src"
             reference="$eval_dir/$dset.$src-$tgt.$tgt"
             output="$translations_dir/$dset.$src-$tgt.$tgt.pred"
-            translate "$model" "$src" "$tgt" "$dset" < "$input" > "$output"
+            translate "$model" "$src" "$tgt" < "$input" > "$output"
             sacrebleu -l "$src-$tgt" "$reference" < "$output" | (tr -d '\n'; echo) | tee -a "$result"
         done
     done
