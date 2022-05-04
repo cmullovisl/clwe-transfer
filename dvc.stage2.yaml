@@ -7,6 +7,8 @@ vars:
   - embdim: 300
   - model: "continuous"
   - baseconfig: "train-base"
+  - basemodel: "models/base_avg.pt"
+  - autoencoderconfig: "train"
 
 stages:
   # set_stage "newlang"
@@ -28,15 +30,6 @@ stages:
       - "cc.${item}.${embdim}.vec"
       - "cc.${item}.${embdim}.bin"
 
-  download_pivot_embedding:
-    cmd: download_embeddings "${clwepivot}"
-    wdir: "embeddings/models"
-    deps:
-    - "/dev/null"
-    outs:
-    - "cc.${clwepivot}.${embdim}.vec"
-    - "cc.${clwepivot}.${embdim}.bin"
-
   compute_alignments:
     cmd: compute_alignments "${clwepivot}" "${newlanguages}"
     wdir: "embeddings"
@@ -55,7 +48,7 @@ stages:
     - "extracted/"
 
   prepare_monolingual_data:
-    cmd: prepare_monolingual_data "${newlanguages}"
+    cmd: dsets="train dev" prepare_monolingual_data "${newlanguages}"
     wdir: "data"
     deps:
     - "extracted/"
@@ -105,12 +98,13 @@ stages:
 
   # set_stage "autoencoder"
   build_newlang_vocab:
-    cmd: build_newlang_vocab "$basemodel" "${newlanguages}" "${newlanguages}"
+    cmd: build_newlang_vocab "${basemodel}" "${newlanguages}" "${newlanguages}"
     deps:
-    - "data/specials.vec"
+    - "${basemodel}"
     - "data/embeddings/"
     outs:
-    - "data/data.vocab.pt"
+    - "saves/data.vocab.pt"
+    - "saves/specials.pt"
 
   concat_autoencoding_corpus:
     cmd: concat_autoencoding_corpus "autoencoder" "${newlanguages}"
@@ -121,27 +115,35 @@ stages:
     - "corpus/"
 
   preprocess_reuse_vocab:
-    cmd: preprocess_reuse_vocab "autoencoder" "$savedir/data.vocab.pt"
+    cmd: preprocess_reuse_vocab "autoencoder" "saves/data.vocab.pt"
     deps:
     - "data/corpus/"
-    - "data/data.vocab.pt"
+    - "saves/data.vocab.pt"
     outs:
     - "saves/autoencoder/"
 
   train_continue_autoencode:
-    cmd: train_continue "autoencoder" "$model" "$autoencoderconfig" "$basemodel"
+    cmd: train_continue "autoencoder" "${model}" "${autoencoderconfig}" "${basemodel}"
     deps:
     - "saves/autoencoder/"
+    - "${basemodel}"
     outs:
     - "models/autoencoder/"
     metrics:
     - "logs/autoencoder/"
 
-  evauate_bleu_autoencode:
-    cmd: evauate_bleu "autoencoder" "$aemodel" "${baselanguages}" "${newlanguages}"
+  average_models_autoencode:
+    cmd: onmt_average_models -m models/autoencoder/*.pt -o models/autoencoder_avg.pt
     deps:
     - "models/autoencoder/"
-    - "data/eval/"
+    outs:
+    - "models/autoencoder_avg.pt"
+
+  evauate_bleu_autoencode:
+    cmd: evauate_bleu "autoencoder" "${baselanguages}" "${newlanguages}"
+    deps:
+    - "models/autoencoder_avg.pt"
+    - "data/parallel/"
     outs:
     - "translations/autoencoder/"
     - "scores/autoencoder/"

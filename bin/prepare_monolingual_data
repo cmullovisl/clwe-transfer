@@ -2,7 +2,7 @@
 set -euo pipefail
 
 languages="$1"
-dset="${dset:-train}"
+dsets="${dsets:-train}"
 
 input_dir="extracted"
 output_dir="monolingual"
@@ -14,7 +14,9 @@ filter() {
 }
 
 mkdir -p "$output_dir"
-for lng in $languages; do
-    cat "$input_dir/$dset.$lng" |
-        filter > "$output_dir/$dset.$lng"
+for dset in $dsets; do
+    for lng in $languages; do
+        cat "$input_dir/$dset.$lng" |
+            filter > "$output_dir/$dset.$lng"
+    done
 done

@@ -5,33 +5,33 @@ basemodel="$1"
 sourcelanguages="$2"
 targetlanguages="$3"
 
-basespecials="$savedir/specials.pt"
-newspecials="$savedir/specials.pt"
-newvocab="$savedir/data.vocab.pt"
+specials="saves/specials.pt"
+newvocab="saves/data.vocab.pt"
 
-extract_specials "$basemodel" "$basespecials"
+extract-specials.py "$basemodel" "$specials"
 
 newlanguagecodes=()
-for lng in "${newlanguages[@]}"; do
+#for lng in "${newlanguages[@]}"; do
+for lng in $targetlanguages; do
     newlanguagecodes+=("#${lng}#")
 done
 
-python "$SCRIPT_DIR"/scripts/vocab/add-specials.py \
-    "$basespecials" \
-    "$newlanguagecodes" \
-    "$newspecials"
+add-specials.py \
+    "$specials" \
+    "${newlanguagecodes[*]}" \
+    "$specials"
 
 sourceembeddings=()
 for lng in $sourcelanguages; do
-    sourceembeddings+=("$datadir/embeddings.$lng.vec")
+    sourceembeddings+=("data/embeddings/embeddings.$lng.vec")
 done
 targetmbeddings=()
 for lng in $targetlanguages; do
-    targetembeddings+=("$datadir/embeddings.$lng.vec")
+    targetembeddings+=("data/embeddings/embeddings.$lng.vec")
 done
 
-python "$SCRIPT_DIR"/scripts/vocab/new_src-tgt_vocab.py \
-    "$newspecials" \
+new_src-tgt_vocab.py \
+    "$specials" \
     <(cat "${sourceembeddings[@]}") \
     <(cat "${targetembeddings[@]}") \
     "$newvocab"

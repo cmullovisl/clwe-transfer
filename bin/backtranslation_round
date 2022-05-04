@@ -66,6 +66,7 @@ targetlanguages="$4"
 
 backtranslate "$backtranslationmodel" "$targetlanguages" "$sourcelanguages"
 
+# FIXME don't add specials aleady in vocab
 build_newlang_vocab "$basemodel" "$sourcelanguages" "$targetlanguages"
 datadir="$savedir/backtranslations" \
     preprocess_reuse_vocab "$stage" "$savedir/data.vocab.pt"

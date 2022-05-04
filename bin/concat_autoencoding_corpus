@@ -6,10 +6,14 @@ languages="$2"
 
 dsets="train dev"
 
+input_dir="monolingual"
+output_dir="corpus"
+
+mkdir -p "$output_dir"
 for lng in $languages; do
     for dset in $dsets; do
-        cat "$data_in/$dset.$lng" | preprocess_source_data "$lng" "$lng" >> "$datadir/$dset.$stage.src"
-        cat "$data_in/$dset.$lng" | preprocess_target_data "$lng" "$lng" >> "$datadir/$dset.$stage.tgt"
+        cat "$input_dir/$dset.$lng" | preprocess_source_data "$lng" "$lng" >> "$output_dir/$dset.$stage.src"
+        cat "$input_dir/$dset.$lng" | preprocess_target_data "$lng" "$lng" >> "$output_dir/$dset.$stage.tgt"
     done
 done
 

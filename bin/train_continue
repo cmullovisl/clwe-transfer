@@ -12,5 +12,5 @@ train "$stage" \
     "$model" \
     "$trainconfig" \
     -train_from "$trainfrom" \
-    -new_vocab "$savedir/data.vocab.pt" \
+    -new_vocab "saves/data.vocab.pt" \
     ${additional_args[@]+"${additional_args[@]}"}
