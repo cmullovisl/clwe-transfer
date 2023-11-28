@@ -163,13 +163,16 @@ stages:
     - "models/autoencoder_avg.pt"
 
   evauate_bleu_autoencode:
-    cmd: evauate_bleu "autoencoder" "${baselanguages}" "${newlanguage}"
-    deps:
-    - "models/autoencoder_avg.pt"
-    - "data/parallel/"
-    outs:
-    - "translations/autoencoder/"
-    - "scores/autoencoder/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: evauate_bleu "autoencoder" "${item}" "${newlanguage}"
+      deps:
+      - "models/autoencoder_avg.pt"
+      - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
+      - "data/parallel/test.${item}-${newlanguage}.${item}"
+      outs:
+      - "translations/autoencoder/test.${item}-${newlanguage}.${newlanguage}.pred"
+      - "scores/autoencoder/test.${item}-${newlanguage}.jsonl"
 
   # set_stage "backtranslate"
   prepare_backtranslation_data_round1:
