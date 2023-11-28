@@ -17,6 +17,7 @@ mkdir -p "$output_dir"
 for dset in $dsets; do
     for src in $languages; do
         for tgt in $languages; do
+            [[ $src = "$tgt" ]] && continue
             paste "$input_dir/$dset.$src" "$input_dir/$dset.$tgt" |
                 filter |
                 unpaste "$output_dir/$dset.$src-$tgt.$src" "$output_dir/$dset.$src-$tgt.$tgt"

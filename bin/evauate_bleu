@@ -13,7 +13,6 @@ dsets="dev test"
 eval_dir="data/parallel"
 translations_dir="translations/$stage"
 result_dir="scores/$stage"
-result="$result_dir/$stage.jsonl"
 model="models/${stage}_avg.pt"
 
 mkdir -p "$translations_dir" "$result_dir"
@@ -22,14 +21,17 @@ for src in $sourcelanguages; do
         [[ $src = "$tgt" ]] && continue
 
         #echo "$src-$tgt" | tee -a "$result"
+        echo "$src-$tgt"
         for dset in $dsets; do
             [[ -f $eval_dir/$dset.$src-$tgt.$src ]] || continue
 
             input="$eval_dir/$dset.$src-$tgt.$src"
             reference="$eval_dir/$dset.$src-$tgt.$tgt"
             output="$translations_dir/$dset.$src-$tgt.$tgt.pred"
+            result="$result_dir/$dset.$src-$tgt.jsonl"
             translate "$model" "$src" "$tgt" < "$input" > "$output"
-            sacrebleu -l "$src-$tgt" "$reference" < "$output" | (tr -d '\n'; echo) | tee -a "$result"
+            #sacrebleu -l "$src-$tgt" "$reference" < "$output" | (tr -d '\n'; echo) | tee -a "$result"
+            sacrebleu -l "$src-$tgt" "$reference" < "$output" | tee -a "$result"
         done
     done
 done

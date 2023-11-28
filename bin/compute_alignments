@@ -46,5 +46,5 @@ for lng in $languages; do
 done
 
 #python "$SCRIPT_DIR"/scripts/fasttext/write-eye.py \
-write-eye.py \
-    "$embdim" > "$output_dir/aligned.$pivot.vec-mat"
+[[ -f $output_dir/aligned.$pivot.vec-mat ]] ||
+    write-eye.py "$embdim" > "$output_dir/aligned.$pivot.vec-mat"

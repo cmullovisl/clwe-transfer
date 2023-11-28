@@ -10,7 +10,7 @@ additional_args=("$@")
 save_dir="saves/$stage"
 model_dir="models/$stage"
 config_dir="config/$stage"
-log_dir="metrics"
+log_dir="logs/$stage"
 
 mkdir -p "$model_dir" "$log_dir"
 

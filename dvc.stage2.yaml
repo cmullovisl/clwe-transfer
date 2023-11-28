@@ -1,8 +1,8 @@
 vars:
   - stage: newlang
+  - baselanguages_list: ["en", "de", "es", "fr", "it"]
   - baselanguages: "en de es fr it"
-  - newlanguages: "pt"
-  - newlanguages_list: ["pt"]
+  - newlanguage: "pt"
   - clwepivot: "en"
   - embdim: 300
   - model: "continuous"
@@ -13,92 +13,115 @@ vars:
 stages:
   # set_stage "newlang"
   #download_embeddings:
-  #  cmd: download_embeddings "${newlanguages}"
+  #  cmd: download_embeddings "${newlanguage}"
   #  wdir: "embeddings/models"
   #  deps:
   #  - "/dev/null"
   #  outs:
   #  - "./"
   download_embeddings:
-    foreach: ${newlanguages_list}
-    do:
-      cmd: download_embeddings "${item}"
-      wdir: "embeddings/models"
-      deps:
-      - "/dev/null"
-      outs:
-      - "cc.${item}.${embdim}.vec"
-      - "cc.${item}.${embdim}.bin"
+    cmd: download_embeddings "${newlanguage}"
+    wdir: "embeddings/models"
+    deps: []
+    #- "/dev/null"
+    outs:
+    - "cc.${newlanguage}.${embdim}.vec"
+    - "cc.${newlanguage}.${embdim}.bin"
 
   compute_alignments:
-    cmd: compute_alignments "${clwepivot}" "${newlanguages}"
+    cmd: compute_alignments "${clwepivot}" "${newlanguage}"
     wdir: "embeddings"
     deps:
-    - "models/"
+    - "models/cc.${newlanguage}.${embdim}.vec"
     outs:
-    - "dicts/"
-    - "align/"
+    #- "dicts/"
+    - "align/aligned.${newlanguage}.vec-mat"
 
   extract_data:
-    cmd: extract_data "${baselanguages} ${newlanguages}"
+    cmd: extract_data "${newlanguage}"
     wdir: "data"
     deps:
     - "ted_talks.tar.gz"
     outs:
-    - "extracted/"
+    - "extracted/train.${newlanguage}"
+    - "extracted/dev.${newlanguage}"
+    - "extracted/test.${newlanguage}"
 
   prepare_monolingual_data:
-    cmd: dsets="train dev" prepare_monolingual_data "${newlanguages}"
+    cmd: dsets="train dev" prepare_monolingual_data "${newlanguage}"
     wdir: "data"
     deps:
-    - "extracted/"
+    - "extracted/train.${newlanguage}"
+    - "extracted/dev.${newlanguage}"
+    - "extracted/test.${newlanguage}"
     outs:
     - "monolingual/"
 
   build_embeddings:
-    cmd: build_embeddings "${newlanguages}"
+    cmd: build_embeddings "${newlanguage}"
     deps:
     #- "extract-words.py"
-    - "data/monolingual/"
-    - "embeddings/align/"
-    - "embeddings/models/"
+    - "data/monolingual/train.${newlanguage}"
+    - "embeddings/align/aligned.${newlanguage}.vec-mat"
+    - "embeddings/models/cc.${newlanguage}.${embdim}.vec"
+    - "embeddings/models/cc.${newlanguage}.${embdim}.bin"
     outs:
-    - "data/embeddings/"
+    - "data/embeddings/embeddings.${newlanguage}.vec"
 
   # set_stage "blindenc"
   prepare_parallel_data:
-    cmd: prepare_parallel_data "test" "${baselanguages} ${newlanguages}"
-    wdir: "data"
-    deps:
-    - "extracted/"
-    outs:
-    - "parallel/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: prepare_parallel_data "test" "${item} ${newlanguage}"
+      wdir: "data"
+      deps:
+      - "extracted/"
+      outs:
+      #- "parallel/"
+      - "parallel/test.${item}-${newlanguage}.${newlanguage}"
+      - "parallel/test.${item}-${newlanguage}.${item}"
+      - "parallel/test.${newlanguage}-${item}.${newlanguage}"
+      - "parallel/test.${newlanguage}-${item}.${item}"
 
   evauate_bleu_blindenc:
-    cmd: evauate_bleu "blindenc" "${newlanguages}" "${baselanguages}"
-    deps:
-    - "models/blindenc_avg.pt"
-    #- "data/eval/"
-    - "data/parallel/"
-    - "data/embeddings/"
-    outs:
-    - "translations/blindenc/"
-    - "scores/blindenc/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: ln -sf base_avg.pt models/blindenc_avg.pt && evauate_bleu "blindenc" "${newlanguage}" "${item}"
+      deps:
+      #- "models/blindenc_avg.pt"
+      - "models/base_avg.pt"
+      #- "data/eval/"
+      #- "data/parallel/"
+      - "data/parallel/test.${newlanguage}-${item}.${newlanguage}"
+      - "data/parallel/test.${newlanguage}-${item}.${item}"
+      - "data/embeddings/"
+      outs:
+      #- "translations/blindenc/"
+      - "translations/blindenc/test.${newlanguage}-${item}.${item}.pred"
+      #- "scores/blindenc/"
+      - "scores/blindenc/test.${newlanguage}-${item}.jsonl"
 
   evauate_bleu_blinddec:
-    cmd: evauate_bleu "blinddec" "${baselanguages}" "${newlanguages}"
-    deps:
-    - "models/blinddec_avg.pt"
-    #- "data/eval/"
-    - "data/parallel/"
-    - "data/embeddings/"
-    outs:
-    - "translations/blinddec/"
-    - "scores/blinddec/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: ln -sf base_avg.pt models/blinddec_avg.pt && evauate_bleu "blinddec" "${baselanguages}" "${newlanguage}"
+      deps:
+      #- "models/blinddec_avg.pt"
+      - "models/base_avg.pt"
+      #- "data/eval/"
+      #- "data/parallel/"
+      - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
+      - "data/parallel/test.${item}-${newlanguage}.${item}"
+      - "data/embeddings/"
+      outs:
+      #- "translations/blinddec/"
+      - "translations/blinddec/test.${newlanguage}-${item}.${item}.pred"
+      #- "scores/blinddec/"
+      - "scores/blinddec/test.${newlanguage}-${item}.jsonl"
 
   # set_stage "autoencoder"
   build_newlang_vocab:
-    cmd: build_newlang_vocab "${basemodel}" "${newlanguages}" "${newlanguages}"
+    cmd: build_newlang_vocab "${basemodel}" "${newlanguage}" "${newlanguage}"
     deps:
     - "${basemodel}"
     - "data/embeddings/"
@@ -107,7 +130,7 @@ stages:
     - "saves/specials.pt"
 
   concat_autoencoding_corpus:
-    cmd: concat_autoencoding_corpus "autoencoder" "${newlanguages}"
+    cmd: concat_autoencoding_corpus "autoencoder" "${newlanguage}"
     wdir: "data"
     deps:
     - "monolingual/"
@@ -140,7 +163,7 @@ stages:
     - "models/autoencoder_avg.pt"
 
   evauate_bleu_autoencode:
-    cmd: evauate_bleu "autoencoder" "${baselanguages}" "${newlanguages}"
+    cmd: evauate_bleu "autoencoder" "${baselanguages}" "${newlanguage}"
     deps:
     - "models/autoencoder_avg.pt"
     - "data/parallel/"
@@ -150,14 +173,15 @@ stages:
 
   # set_stage "backtranslate"
   prepare_backtranslation_data_round1:
-    cmd: prepare_backtranslation_data "$data_in" "${baselanguages}" "${newlanguages}"
+    cmd: prepare_backtranslation_data "data/monolingual" "${baselanguages}" "${newlanguage}"
+    wdir: "data"
     deps:
-    - "data/raw/monolingual/"
+    - "monolingual/"
     outs:
-    - "data/bt/src/round1/"
+    - "bt/src/round1/"
 
   backtranslation_round_round1:
-    cmd: freezeenc=y backtranslation_round "$basemodel" "$btmodel" "${baselanguages}" "${newlanguages}"
+    cmd: freezeenc=y backtranslation_round "$basemodel" "$btmodel" "${baselanguages}" "${newlanguage}"
     deps:
     - "data/bt/src/round1/"
     - "models/bt/round0/"
@@ -167,7 +191,7 @@ stages:
     - "models/bt/round1/"
 
   evauate_bleu_backtranslation_round1:
-    cmd: evauate_bleu "backtranslate" "$btmodel" "${baselanguages}" "${newlanguages}"
+    cmd: evauate_bleu "backtranslate" "$btmodel" "${baselanguages}" "${newlanguage}"
     deps:
     - "models/bt/round1/"
     - "models/backtranslate/round1/"
@@ -177,14 +201,15 @@ stages:
     - "scores/backtranslate/round1/"
 
   prepare_backtranslation_data_round2:
-    cmd: prepare_backtranslation_data "$data_in" "${newlanguages}" "${baselanguages}"
+    cmd: prepare_backtranslation_data "monolingual" "${newlanguage}" "${baselanguages}"
+    wdir: "data"
     deps:
-    - "data/raw/monolingual/"
+    - "monolingual/"
     outs:
-    - "data/bt/src/round2/"
+    - "bt/src/round2/"
 
   backtranslation_round_round2:
-    cmd: freezeenc= backtranslation_round "$basemodel" "$btmodel" "${newlanguages}" "${baselanguages}"
+    cmd: freezeenc= backtranslation_round "$basemodel" "$btmodel" "${newlanguage}" "${baselanguages}"
     deps:
     - "data/bt/src/round2/"
     - "models/bt/round1/"
@@ -194,7 +219,7 @@ stages:
     - "models/bt/round2/"
 
   evauate_bleu_backtranslation_round2:
-    cmd: evauate_bleu "backtranslate" "$btmodel" "${newlanguages}" "${baselanguages}"
+    cmd: evauate_bleu "backtranslate" "$btmodel" "${newlanguage}" "${baselanguages}"
     deps:
     - "models/bt/round2/"
     - "models/backtranslate/round2"
