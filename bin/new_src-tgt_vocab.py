@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import torch
-from util import vec_to_vocab, load_field
+from onmt_vocab_utils import vec_to_vocab, load_field
 
 vocab_path = sys.argv[1]
 src_embeddings_path = sys.argv[2]

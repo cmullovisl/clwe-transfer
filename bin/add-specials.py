@@ -3,9 +3,11 @@ import sys
 import torch
 from torch.nn.functional import normalize
 from torchtext.vocab import Vocab
-from util import (load_vec,
-                  load_field,
-                  extract_specials)
+from onmt_vocab_utils import (
+    load_vec,
+    load_field,
+    extract_specials,
+)
 
 vocab_path = sys.argv[1]
 requested_specials = sys.argv[2]

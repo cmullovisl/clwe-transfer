@@ -2,11 +2,13 @@
 import sys
 import torch
 
-from util import (get_model_embeddings,
-        load_model,
-        filter_vocab,
-        extract_specials,
-        counter_to_vocab)
+from onmt_vocab_utils import (
+    get_model_embeddings,
+    load_model,
+    filter_vocab,
+    extract_specials,
+    counter_to_vocab,
+)
 
 if len(sys.argv) < 3:
     print(
