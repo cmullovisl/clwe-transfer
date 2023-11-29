@@ -1,28 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-backtranslate_translate() {
-    local model="$1"
-    local src="$2"
-    local tgt="$3"
-    local dset="$4"
-
-    local gpu="${gpu:-0}"
-    local beamsize=4
-    local batchsize=4000
-
-    onmt_translate \
-        -batch_type tokens \
-        -batch_size "$batchsize" \
-        -beam_size "$beamsize" \
-        -gpu "$gpu" \
-        -model "$model" \
-        -src "$rounddir/src/$dset.$src-$tgt.$src" \
-        -output "$rounddir/$dset.$src-$tgt.$tgt.pred" \
-        -src_embeddings "data/embeddings/embeddings.$src.vec" \
-        -tgt_embeddings "data/embeddings/embeddings.$tgt.vec"
-}
-
 backtranslate() {
     local src tgt dset
     local model="$1"
@@ -37,20 +15,6 @@ backtranslate() {
         for src in $sourcelanguages; do
             for tgt in $targetlanguages; do
                 [[ $src = "$tgt" ]] && continue
-                #[[ -f $rounddir/src/$dset.$src-$tgt.$src ]] || continue
-
-                #backtranslate_translate "$model" "$src" "$tgt" "$dset"
-                #cat "$rounddir/$dset.$src-$tgt.$tgt.pred" |
-                #    postprocess.py "$tgt" |
-                #    sed "s/^/#${src}# /" >> "$datadir/$dset.$stage.src"
-                #cat "$rounddir/$dset.$src-$tgt.$src" |
-                #    sed "s/^#${tgt}# //" >> "$datadir/$dset.$stage.tgt"
-
-                #input="$data_dir/$dset.$src"
-                #output="..."
-                #translate "$model" "$src" "$tgt" < "$input" > "$output"
-                #cat "$output" |
-                #    preprocess_source_data "$tgt" "$src" >> "$datadir/$dset.$stage.src"
 
                 input="$monodir/$dset.$src"
                 translate "$model" "$src" "$tgt" < "$input" |
@@ -62,8 +26,6 @@ backtranslate() {
         done
     done
 
-    # FIXME defined somewhere else
-    #datadir="$datadir" shuffle_corpus "train"
     shuffle_corpus "$datadir/train.$stage"
 }
 
@@ -73,7 +35,6 @@ sourcelanguages="$3"
 targetlanguages="$4"
 stage="$5"
 
-rounddir="data/$stage"
 datadir="data/corpus"
 
 # name of the model ... not so important actually since the averaged checkpoint
@@ -82,17 +43,13 @@ model="continuous"
 # config filename inside config/$stage (without .yml extension)
 backtranslationconfig="train"
 
-# should already exist
-#mkdir -p "$rounddir"
-
 # deps: data/$stage/src/{train,dev}.$tgt-$src.$tgt
 # outs: data/corpus/{train,dev}.$stage.{src,tgt}
 backtranslate "$backtranslationmodel" "$targetlanguages" "$sourcelanguages"
 
 # deps: data/embeddings/embeddings.$lng.vec
 #       ${basemodel}
-# outs: saves/specials.pt
-#       saves/data.vocab.pt
+# outs: saves/$stage.vocab.pt
 # FIXME don't add specials aleady in vocab
 build_newlang_vocab "$stage" "$basemodel" "$sourcelanguages" "$targetlanguages"
 
@@ -101,11 +58,10 @@ build_newlang_vocab "$stage" "$basemodel" "$sourcelanguages" "$targetlanguages"
 # outs: saves/$stage/data.{train,valid}.[0-9]*.pt
 #       saves/$stage/data.vocab.pt
 #       saves/$stage/preprocess.log
-#datadir="$datadir/bt" \
 preprocess_reuse_vocab "$stage" "saves/data.vocab.pt"
 
 # deps: saves/$stage/data.{train,valid}.[0-9]*.pt
-#       saves/data.vocab.pt # XXX mistake?
+#       saves/$stage.vocab.pt
 #       config/$stage/${backtranslationconfig}.yml
 #       ${basemodel}
 # outs: models/$stage/${model}_step_*.pt

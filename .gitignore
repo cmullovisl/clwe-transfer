@@ -13,5 +13,3 @@ __pycache__
 /logs/
 /translations/
 /scores/
-
-dvc.yaml

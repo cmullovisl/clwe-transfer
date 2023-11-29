@@ -197,19 +197,14 @@ stages:
     - "data/bt1/src/"
     # baselanguage embeddings should also be depended on
     - "data/embeddings/embeddings.${newlanguage}.vec"
-    #- "models/bt/round0/"
-    #- "models/bt/basemodel/"
     - "${basemodel}"
     - "config/bt1/${backtranslationconfig}.yml"
     outs:
-    #- "data/bt/tgt/round1/"
-    #- "models/bt1/"
     - "data/corpus/train.bt1.src"
     - "data/corpus/train.bt1.tgt"
     - "data/corpus/dev.bt1.src"
     - "data/corpus/dev.bt1.tgt"
     - "models/bt1_avg.pt"
-    #- "saves/bt1.specials.pt"
     - "saves/bt1.vocab.pt"
 
   evauate_bleu_backtranslation_round1:
@@ -220,11 +215,8 @@ stages:
       - "data/embeddings/embeddings.${newlanguage}.vec"
       - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
       - "data/parallel/test.${item}-${newlanguage}.${item}"
-      #- "models/bt1/"
       - "models/bt1_avg.pt"
       outs:
-      #- "translations/bt1/"
-      #- "scores/bt1/"
       - "translations/bt1/test.${item}-${newlanguage}.${newlanguage}.pred"
       - "scores/bt1/test.${item}-${newlanguage}.jsonl"
 
