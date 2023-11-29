@@ -1,0 +1,17 @@
+/clwe_transfer.egg-info
+/.venv/
+__pycache__
+
+/data/
+/embeddings/models/*.bin
+/embeddings/models/*.vec
+/embeddings/align/
+/embeddings/dicts/
+/models/
+/saves/
+/metrics/
+/logs/
+/translations/
+/scores/
+
+dvc.yaml
