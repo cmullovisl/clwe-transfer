@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-basemodel="$1"
-sourcelanguages="$2"
-targetlanguages="$3"
+stage="$1"
+basemodel="$2"
+sourcelanguages="$3"
+targetlanguages="$4"
 
 specials="saves/specials.pt"
-newvocab="saves/data.vocab.pt"
+newvocab="saves/$stage.vocab.pt"
 
 extract-specials.py "$basemodel" "$specials"
 
@@ -35,3 +36,5 @@ new_src-tgt_vocab.py \
     <(cat "${sourceembeddings[@]}") \
     <(cat "${targetembeddings[@]}") \
     "$newvocab"
+
+rm "$specials"

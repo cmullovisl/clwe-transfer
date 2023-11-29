@@ -122,13 +122,13 @@ stages:
 
   # set_stage "autoencoder"
   build_newlang_vocab:
-    cmd: build_newlang_vocab "${basemodel}" "${newlanguage}" "${newlanguage}"
+    cmd: build_newlang_vocab "autoencoder" "${basemodel}" "${newlanguage}" "${newlanguage}"
     deps:
     - "${basemodel}"
     - "data/embeddings/"
     outs:
-    - "saves/data.vocab.pt"
-    - "saves/specials.pt"
+    - "saves/autoencoder.vocab.pt"
+    #- "saves/autoencoder.specials.pt"
 
   concat_autoencoding_corpus:
     cmd: concat_autoencoding_corpus "autoencoder" "${newlanguage}"
@@ -209,6 +209,8 @@ stages:
     - "data/corpus/dev.bt1.src"
     - "data/corpus/dev.bt1.tgt"
     - "models/bt1_avg.pt"
+    #- "saves/bt1.specials.pt"
+    - "saves/bt1.vocab.pt"
 
   evauate_bleu_backtranslation_round1:
     foreach: ${baselanguages_list}

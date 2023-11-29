@@ -28,6 +28,7 @@ backtranslate() {
     local model="$1"
     local sourcelanguages="$2"
     local targetlanguages="$3"
+    local monodir="data/monolingual"
 
     for dset in train dev; do
         rm -f "$datadir/$dset.$stage.tgt"
@@ -36,16 +37,27 @@ backtranslate() {
         for src in $sourcelanguages; do
             for tgt in $targetlanguages; do
                 [[ $src = "$tgt" ]] && continue
-                [[ -f $rounddir/src/$dset.$src-$tgt.$src ]] || continue
+                #[[ -f $rounddir/src/$dset.$src-$tgt.$src ]] || continue
 
-                backtranslate_translate "$model" "$src" "$tgt" "$dset"
+                #backtranslate_translate "$model" "$src" "$tgt" "$dset"
+                #cat "$rounddir/$dset.$src-$tgt.$tgt.pred" |
+                #    postprocess.py "$tgt" |
+                #    sed "s/^/#${src}# /" >> "$datadir/$dset.$stage.src"
+                #cat "$rounddir/$dset.$src-$tgt.$src" |
+                #    sed "s/^#${tgt}# //" >> "$datadir/$dset.$stage.tgt"
 
-                cat "$rounddir/$dset.$src-$tgt.$tgt.pred" |
-                    postprocess.py "$tgt" |
-                    sed "s/^/#${src}# /" >> "$datadir/$dset.$stage.src"
+                #input="$data_dir/$dset.$src"
+                #output="..."
+                #translate "$model" "$src" "$tgt" < "$input" > "$output"
+                #cat "$output" |
+                #    preprocess_source_data "$tgt" "$src" >> "$datadir/$dset.$stage.src"
 
-                cat "$rounddir/$dset.$src-$tgt.$src" |
-                    sed "s/^#${tgt}# //" >> "$datadir/$dset.$stage.tgt"
+                input="$monodir/$dset.$src"
+                translate "$model" "$src" "$tgt" < "$input" |
+                    preprocess_source_data "$tgt" "$src" >> "$datadir/$dset.$stage.src"
+
+                cat "$input" |
+                    preprocess_target_data "$tgt" "$src" >> "$datadir/$dset.$stage.tgt"
             done
         done
     done
@@ -82,7 +94,7 @@ backtranslate "$backtranslationmodel" "$targetlanguages" "$sourcelanguages"
 # outs: saves/specials.pt
 #       saves/data.vocab.pt
 # FIXME don't add specials aleady in vocab
-build_newlang_vocab "$basemodel" "$sourcelanguages" "$targetlanguages"
+build_newlang_vocab "$stage" "$basemodel" "$sourcelanguages" "$targetlanguages"
 
 # deps: data/corpus/{train,dev}.$stage.{src,tgt}
 #       saves/data.vocab.pt
