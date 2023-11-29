@@ -98,7 +98,10 @@ stages:
   preprocess:
     cmd: preprocess "${stage}"
     deps:
-    - "data/corpus/"
+    - "data/corpus/train.${stage}.src"
+    - "data/corpus/train.${stage}.tgt"
+    - "data/corpus/dev.${stage}.src"
+    - "data/corpus/dev.${stage}.tgt"
     - "data/vocab/"
     - "data/allembeddings/"
     outs:

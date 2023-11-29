@@ -1,19 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-src tgt dset
 data_in="$1"
-sourcelanguages="$2"
-targetlanguages="$3"
+outdir="$2"
+sourcelanguages="$3"
+targetlanguages="$4"
 
-btdir="$savedir/backtranslations"
-mkdir -p "$btdir"
+mkdir -p "$outdir"
 
 for src in $sourcelanguages; do
     for tgt in $targetlanguages; do
         for dset in train dev; do
             cat "$data_in/$dset.$tgt" |
-                preprocess_source_data "$tgt" "$src" > "$btdir/$dset.$tgt-$src.$tgt"
+                preprocess_source_data "$tgt" "$src" > "$outdir/$dset.$tgt-$src.$tgt"
         done
     done
 done

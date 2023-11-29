@@ -9,6 +9,7 @@ vars:
   - baseconfig: "train-base"
   - basemodel: "models/base_avg.pt"
   - autoencoderconfig: "train"
+  - backtranslationconfig: "train"
 
 stages:
   # set_stage "newlang"
@@ -86,10 +87,10 @@ stages:
   evauate_bleu_blindenc:
     foreach: ${baselanguages_list}
     do:
-      cmd: ln -sf base_avg.pt models/blindenc_avg.pt && evauate_bleu "blindenc" "${newlanguage}" "${item}"
+      cmd: ln -sf "${basemodel}" "models/blindenc_avg.pt" && evauate_bleu "blindenc" "${newlanguage}" "${item}"
       deps:
       #- "models/blindenc_avg.pt"
-      - "models/base_avg.pt"
+      - "${basemodel}"
       #- "data/eval/"
       #- "data/parallel/"
       - "data/parallel/test.${newlanguage}-${item}.${newlanguage}"
@@ -104,10 +105,10 @@ stages:
   evauate_bleu_blinddec:
     foreach: ${baselanguages_list}
     do:
-      cmd: ln -sf base_avg.pt models/blinddec_avg.pt && evauate_bleu "blinddec" "${baselanguages}" "${newlanguage}"
+      cmd: ln -sf "${basemodel}" "models/blinddec_avg.pt" && evauate_bleu "blinddec" "${baselanguages}" "${newlanguage}"
       deps:
       #- "models/blinddec_avg.pt"
-      - "models/base_avg.pt"
+      - "${basemodel}"
       #- "data/eval/"
       #- "data/parallel/"
       - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
@@ -135,12 +136,19 @@ stages:
     deps:
     - "monolingual/"
     outs:
-    - "corpus/"
+    #- "corpus/"
+    - "corpus/train.autoencoder.src"
+    - "corpus/train.autoencoder.tgt"
+    - "corpus/dev.autoencoder.src"
+    - "corpus/dev.autoencoder.tgt"
 
   preprocess_reuse_vocab:
     cmd: preprocess_reuse_vocab "autoencoder" "saves/data.vocab.pt"
     deps:
-    - "data/corpus/"
+    - "data/corpus/train.autoencoder.src"
+    - "data/corpus/train.autoencoder.tgt"
+    - "data/corpus/dev.autoencoder.src"
+    - "data/corpus/dev.autoencoder.tgt"
     - "saves/data.vocab.pt"
     outs:
     - "saves/autoencoder/"
@@ -176,32 +184,47 @@ stages:
 
   # set_stage "backtranslate"
   prepare_backtranslation_data_round1:
-    cmd: prepare_backtranslation_data "data/monolingual" "${baselanguages}" "${newlanguage}"
+    cmd: prepare_backtranslation_data "monolingual" "bt1/src" "${baselanguages}" "${newlanguage}"
     wdir: "data"
     deps:
     - "monolingual/"
     outs:
-    - "bt/src/round1/"
+    - "bt1/src/"
 
   backtranslation_round_round1:
-    cmd: freezeenc=y backtranslation_round "$basemodel" "$btmodel" "${baselanguages}" "${newlanguage}"
+    cmd: freezeenc=y backtranslation_round "${basemodel}" "${basemodel}" "${baselanguages}" "${newlanguage}" "bt1"
     deps:
-    - "data/bt/src/round1/"
-    - "models/bt/round0/"
-    - "models/bt/basemodel/"
+    - "data/bt1/src/"
+    # baselanguage embeddings should also be depended on
+    - "data/embeddings/embeddings.${newlanguage}.vec"
+    #- "models/bt/round0/"
+    #- "models/bt/basemodel/"
+    - "${basemodel}"
+    - "config/bt1/${backtranslationconfig}.yml"
     outs:
     #- "data/bt/tgt/round1/"
-    - "models/bt/round1/"
+    #- "models/bt1/"
+    - "data/corpus/train.bt1.src"
+    - "data/corpus/train.bt1.tgt"
+    - "data/corpus/dev.bt1.src"
+    - "data/corpus/dev.bt1.tgt"
+    - "models/bt1_avg.pt"
 
   evauate_bleu_backtranslation_round1:
-    cmd: evauate_bleu "backtranslate" "$btmodel" "${baselanguages}" "${newlanguage}"
-    deps:
-    - "models/bt/round1/"
-    - "models/backtranslate/round1/"
-    - "data/eval/"
-    outs:
-    - "translations/backtranslate/round1/"
-    - "scores/backtranslate/round1/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: evauate_bleu "bt1" "models/bt1_avg.pt" "${item}" "${newlanguage}"
+      deps:
+      - "data/embeddings/embeddings.${newlanguage}.vec"
+      - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
+      - "data/parallel/test.${item}-${newlanguage}.${item}"
+      #- "models/bt1/"
+      - "models/bt1_avg.pt"
+      outs:
+      #- "translations/bt1/"
+      #- "scores/bt1/"
+      - "translations/bt1/test.${item}-${newlanguage}.${newlanguage}.pred"
+      - "scores/bt1/test.${item}-${newlanguage}.jsonl"
 
   prepare_backtranslation_data_round2:
     cmd: prepare_backtranslation_data "monolingual" "${newlanguage}" "${baselanguages}"
