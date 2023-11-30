@@ -182,15 +182,6 @@ stages:
       - "translations/autoencoder/test.${item}-${newlanguage}.${newlanguage}.pred"
       - "scores/autoencoder/test.${item}-${newlanguage}.jsonl"
 
-  # set_stage "backtranslate"
-  prepare_backtranslation_data_round1:
-    cmd: prepare_backtranslation_data "monolingual" "bt1/src" "${baselanguages}" "${newlanguage}"
-    wdir: "data"
-    deps:
-    - "monolingual/"
-    outs:
-    - "bt1/src/"
-
   backtranslation_round_round1:
     cmd: freezeenc=y backtranslation_round "${basemodel}" "${basemodel}" "${baselanguages}" "${newlanguage}" "bt1"
     deps:
@@ -210,7 +201,7 @@ stages:
   evauate_bleu_backtranslation_round1:
     foreach: ${baselanguages_list}
     do:
-      cmd: evauate_bleu "bt1" "models/bt1_avg.pt" "${item}" "${newlanguage}"
+      cmd: evauate_bleu "bt1" "${item}" "${newlanguage}"
       deps:
       - "data/embeddings/embeddings.${newlanguage}.vec"
       - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
@@ -220,30 +211,32 @@ stages:
       - "translations/bt1/test.${item}-${newlanguage}.${newlanguage}.pred"
       - "scores/bt1/test.${item}-${newlanguage}.jsonl"
 
-  prepare_backtranslation_data_round2:
-    cmd: prepare_backtranslation_data "monolingual" "${newlanguage}" "${baselanguages}"
-    wdir: "data"
-    deps:
-    - "monolingual/"
-    outs:
-    - "bt/src/round2/"
-
   backtranslation_round_round2:
-    cmd: freezeenc= backtranslation_round "$basemodel" "$btmodel" "${newlanguage}" "${baselanguages}"
+    cmd: freezeenc= backtranslation_round "${basemodel}" "models/bt1_avg.pt" "${newlanguage}" "${baselanguages}" "bt2"
     deps:
-    - "data/bt/src/round2/"
-    - "models/bt/round1/"
-    - "models/bt/basemodel/"
+    - "data/bt2/src/"
+    # baselanguage embeddings should also be depended on
+    - "data/embeddings/embeddings.${newlanguage}.vec"
+    - "${basemodel}"
+    - "models/bt1_avg.pt"
+    - "config/bt2/${backtranslationconfig}.yml"
     outs:
-    #- "data/bt/tgt/round2/"
-    - "models/bt/round2/"
+    - "data/corpus/train.bt2.src"
+    - "data/corpus/train.bt2.tgt"
+    - "data/corpus/dev.bt2.src"
+    - "data/corpus/dev.bt2.tgt"
+    - "models/bt2_avg.pt"
+    - "saves/bt2.vocab.pt"
 
   evauate_bleu_backtranslation_round2:
-    cmd: evauate_bleu "backtranslate" "$btmodel" "${newlanguage}" "${baselanguages}"
-    deps:
-    - "models/bt/round2/"
-    - "models/backtranslate/round2"
-    - "data/eval/"
-    outs:
-    - "translations/backtranslate/round2/"
-    - "scores/backtranslate/round2/"
+    foreach: ${baselanguages_list}
+    do:
+      cmd: evauate_bleu "bt2" "${newlanguage}" "${item}"
+      deps:
+      - "data/embeddings/embeddings.${newlanguage}.vec"
+      - "data/parallel/test.${item}-${newlanguage}.${newlanguage}"
+      - "data/parallel/test.${item}-${newlanguage}.${item}"
+      - "models/bt2_avg.pt"
+      outs:
+      - "translations/bt2/test.${item}-${newlanguage}.${newlanguage}.pred"
+      - "scores/bt2/test.${item}-${newlanguage}.jsonl"

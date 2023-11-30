@@ -17,7 +17,7 @@ backtranslate() {
                 [[ $src = "$tgt" ]] && continue
 
                 input="$monodir/$dset.$src"
-                translate "$model" "$src" "$tgt" < "$input" |
+                beamsize=4 translate "$model" "$src" "$tgt" < "$input" |
                     preprocess_source_data "$tgt" "$src" >> "$datadir/$dset.$stage.src"
 
                 cat "$input" |
@@ -43,7 +43,7 @@ model="continuous"
 # config filename inside config/$stage (without .yml extension)
 backtranslationconfig="train"
 
-# deps: data/$stage/src/{train,dev}.$tgt-$src.$tgt
+# deps: data/monolingual/{train,dev}.$tgt
 # outs: data/corpus/{train,dev}.$stage.{src,tgt}
 backtranslate "$backtranslationmodel" "$targetlanguages" "$sourcelanguages"
 
@@ -76,3 +76,5 @@ onmt_average_models -m "models/$stage"/*.pt -o "models/${stage}_avg.pt"
 #rm -vf "$savedir"/data.train.[0-9]*.pt
 #rm -vf "$savedir"/data.valid.[0-9]*.pt
 #rm -vf "$savedir"/data.vocab.pt
+#rm -vf models/"$stage/${model}_step_"[0-9]*.pt
+#rmdir "models/$stage"
