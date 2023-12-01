@@ -185,7 +185,6 @@ stages:
   backtranslation_round_round1:
     cmd: freezeenc=y backtranslation_round "${basemodel}" "${basemodel}" "${baselanguages}" "${newlanguage}" "bt1"
     deps:
-    - "data/bt1/src/"
     # baselanguage embeddings should also be depended on
     - "data/embeddings/embeddings.${newlanguage}.vec"
     - "${basemodel}"
