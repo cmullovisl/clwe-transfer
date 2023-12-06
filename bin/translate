@@ -38,4 +38,4 @@ postprocess() {
 }
 
 cat "$output" |
-    postprocess
+    postprocess.py $tgt

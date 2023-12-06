@@ -24,7 +24,6 @@ stages:
     cmd: download_embeddings "${newlanguage}"
     wdir: "embeddings/models"
     deps: []
-    #- "/dev/null"
     outs:
     - "cc.${newlanguage}.${embdim}.vec"
     - "cc.${newlanguage}.${embdim}.bin"
@@ -213,7 +212,6 @@ stages:
   backtranslation_round_round2:
     cmd: freezeenc= backtranslation_round "${basemodel}" "models/bt1_avg.pt" "${newlanguage}" "${baselanguages}" "bt2"
     deps:
-    - "data/bt2/src/"
     # baselanguage embeddings should also be depended on
     - "data/embeddings/embeddings.${newlanguage}.vec"
     - "${basemodel}"

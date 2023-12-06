@@ -8,7 +8,7 @@ stage="$1"
 sourcelanguages="$2"
 targetlanguages="$3"
 
-dsets="dev test"
+dsets="${dsets:-dev test}"
 
 eval_dir="data/parallel"
 translations_dir="translations/$stage"
@@ -35,5 +35,3 @@ for src in $sourcelanguages; do
         done
     done
 done
-
-cat "$result"

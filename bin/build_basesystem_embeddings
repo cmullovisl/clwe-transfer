@@ -14,8 +14,8 @@ embeddings_to_vocab() {
     cut -d' ' -f1
 }
 
-stage=base
-mkdir "$output_dir" "$vocab_dir"
+stage="${stage:-base}"
+mkdir -p "$output_dir" "$vocab_dir"
 out="$output_dir/embeddings.$stage.vec"
 echo "<linecount> ${embdim}" > "$out"
 cat "specials.vec" >> "$out"

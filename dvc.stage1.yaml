@@ -19,8 +19,7 @@ stages:
     do:
       cmd: download_embeddings "${item}"
       wdir: "embeddings/models"
-      deps:
-      - "/dev/null"
+      deps: []
       outs:
       - "cc.${item}.${embdim}.vec"
       - "cc.${item}.${embdim}.bin"
@@ -61,8 +60,7 @@ stages:
   generate_specials:
     cmd: generate-specials.py "${embdim}" ${baselanguages} > "specials.vec"
     wdir: "data"
-    deps:
-    - "/dev/null"
+    deps: []
     outs:
     - "specials.vec"
 
