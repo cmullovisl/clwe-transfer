@@ -143,13 +143,13 @@ stages:
     - "corpus/dev.autoencoder.tgt"
 
   preprocess_reuse_vocab:
-    cmd: preprocess_reuse_vocab "autoencoder" "saves/data.vocab.pt"
+    cmd: preprocess_reuse_vocab "autoencoder" "saves/autoencoder.vocab.pt"
     deps:
     - "data/corpus/train.autoencoder.src"
     - "data/corpus/train.autoencoder.tgt"
     - "data/corpus/dev.autoencoder.src"
     - "data/corpus/dev.autoencoder.tgt"
-    - "saves/data.vocab.pt"
+    - "saves/autoencoder.vocab.pt"
     outs:
     - "saves/autoencoder/"
 

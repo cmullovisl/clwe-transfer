@@ -58,7 +58,7 @@ build_newlang_vocab "$stage" "$basemodel" "$sourcelanguages" "$targetlanguages"
 # outs: saves/$stage/data.{train,valid}.[0-9]*.pt
 #       saves/$stage/data.vocab.pt
 #       saves/$stage/preprocess.log
-preprocess_reuse_vocab "$stage" "saves/data.vocab.pt"
+preprocess_reuse_vocab "$stage" "saves/$stage.vocab.pt"
 
 # deps: saves/$stage/data.{train,valid}.[0-9]*.pt
 #       saves/$stage.vocab.pt
