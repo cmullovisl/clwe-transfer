@@ -16,6 +16,9 @@ out_file = sys.argv[3]
 def add_specials(vocab, new_specials):
     counter = vocab.freqs
     specials = list(extract_specials(vocab))
+    new_specials = [s for s in new_specials if s not in specials]
+    if len(new_specials) == 0:
+        return vocab
     old_vectors = vocab.vectors
     emb_size = old_vectors.size(1)
     # randomly initialize the new special vectors

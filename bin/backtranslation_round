@@ -50,7 +50,6 @@ backtranslate "$backtranslationmodel" "$targetlanguages" "$sourcelanguages"
 # deps: data/embeddings/embeddings.$lng.vec
 #       ${basemodel}
 # outs: saves/$stage.vocab.pt
-# FIXME don't add specials aleady in vocab
 build_newlang_vocab "$stage" "$basemodel" "$sourcelanguages" "$targetlanguages"
 
 # deps: data/corpus/{train,dev}.$stage.{src,tgt}
