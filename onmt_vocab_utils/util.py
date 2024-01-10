@@ -35,7 +35,7 @@ def load_vec(in_file):
     vectors = []
 
     def _process_line(line):
-        word, vector = line.rstrip().split(maxsplit=1)
+        word, vector = line.rstrip().split(' ', maxsplit=1)
         if word in all_words:
             return
         words.append(word)
