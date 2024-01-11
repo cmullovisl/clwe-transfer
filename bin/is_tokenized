@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+reference="$1"
+
+n_tokenized_lines=$(grep -cP " [[:punct:]] *$" < "$reference")
+(( n_tokenized_lines > 100 ))

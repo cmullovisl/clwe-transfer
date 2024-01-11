@@ -17,25 +17,30 @@ beamsize=${beamsize:-1}
 batchsize=${batchsize:-4000}
 
 input=$(mktemp)
+input_tok=$(mktemp)
 output=$(mktemp)
 embeddings=$(mktemp)
 
 cat >> "$input"
+is_tokenized "$input" &&
+    cat < "$input" > "$input_tok" ||
+    sacremoses tokenize < "$input" > "$input_tok"
+
 onmt_translate \
     -batch_type tokens \
     -batch_size "$batchsize" \
     -beam_size "$beamsize" \
     -gpu "$GPU" \
     -model "$model" \
-    -src <(preprocess_source_data "$src" "$tgt" < "$input") \
+    -src <(preprocess_source_data "$src" "$tgt" < "$input_tok") \
     -output "$output" \
-    -src_embeddings <(dataset_to_embeddings "$src" < "$input") \
+    -src_embeddings <(dataset_to_embeddings "$src" < "$input_tok") \
     -tgt_embeddings "$embedding_dir/embeddings.$tgt.vec" 1>&2
 
 
-postprocess() {
-    sed "s/${tgt}@//g"
-}
-
-cat "$output" |
-    postprocess.py $tgt
+if is_tokenized "$input"; then
+    postprocess.py $tgt < "$output"
+else
+    postprocess.py $tgt < "$output" |
+        sacremoses detokenize
+fi
