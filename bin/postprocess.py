@@ -22,6 +22,8 @@ for line in sys.stdin:
     ppline = re.sub("{0}@([^ ]+) {0}@\\1( {0}@\\1)+".format(langcode), "\\1", ppline)
     # remove duplicates consisting of two words
     #ppline = re.sub("{0}@([^ ]+) {0}@([^ ]+)( {0}@\\1 {0}@\\2)+".format(langcode), "\\1 \\2", ppline)
+    # remove instances of 3+ repititions of n-grams (for n >= 2)
+    ppline = re.sub("(({0}@[^ ]+ {0}@[^ ]+)(?: {0}@[^ ]+)*?) \\1( \\1)+".format(langcode), "\\1", ppline)
     # remove language codes
     ppline = re.sub("{0}@".format(langcode), "", ppline)
 
