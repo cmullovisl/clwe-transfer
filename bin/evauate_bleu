@@ -30,8 +30,7 @@ for src in $sourcelanguages; do
             output="$translations_dir/$dset.$src-$tgt.$tgt.pred"
             result="$result_dir/$dset.$src-$tgt.jsonl"
             translate "$model" "$src" "$tgt" < "$input" > "$output"
-            #sacrebleu -l "$src-$tgt" "$reference" < "$output" | (tr -d '\n'; echo) | tee -a "$result"
-            sacrebleu -l "$src-$tgt" "$reference" < "$output" | tee -a "$result"
+            python -m sacrebleu -l "$src-$tgt" "$reference" -m bleu chrf --chrf-word-order 2 < "$output" | tee -a "$result"
         done
     done
 done
