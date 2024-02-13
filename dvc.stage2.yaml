@@ -195,6 +195,7 @@ stages:
     - "data/corpus/dev.bt1.tgt"
     - "models/bt1_avg.pt"
     - "saves/bt1.vocab.pt"
+    - "logs/bt1/training.bt1.${model}.log"
 
   evauate_bleu_backtranslation_round1:
     foreach: ${baselanguages_list}
@@ -224,6 +225,7 @@ stages:
     - "data/corpus/dev.bt2.tgt"
     - "models/bt2_avg.pt"
     - "saves/bt2.vocab.pt"
+    - "logs/bt2/training.bt2.${model}.log"
 
   evauate_bleu_backtranslation_round2:
     foreach: ${baselanguages_list}
