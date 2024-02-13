@@ -1,0 +1,44 @@
+#!/bin/bash
+set -euo pipefail
+
+stage="$1"
+source_languages="$2"
+target_languages="$3"
+basemodel="$4"
+
+N="${N:-300000}"
+config="${config:-train}"
+model="supadd"
+
+
+cd data
+rm -f "corpus/train.$stage.src"
+rm -f "corpus/train.$stage.tgt"
+rm -f "corpus/dev.$stage.src"
+rm -f "corpus/dev.$stage.tgt"
+for src in $source_languages; do
+    for tgt in $target_languages; do
+        head -n"$N" "parallel/train.$src-$tgt.$src" |
+            preprocess_source_data "$src" "$tgt" >> "corpus/train.$stage.src"
+        head -n"$N" "parallel/train.$src-$tgt.$tgt" |
+            preprocess_target_data "$src" "$tgt" >> "corpus/train.$stage.tgt"
+
+        cat "parallel/dev.$src-$tgt.$src" |
+            preprocess_source_data "$src" "$tgt" >> "corpus/dev.$stage.src"
+        cat "parallel/dev.$src-$tgt.$tgt" |
+            preprocess_target_data "$src" "$tgt" >> "corpus/dev.$stage.tgt"
+    done
+done
+cd ..
+
+#build_newlang_vocab "$stage" "$basemodel" "$src" "$tgt"
+build_newlang_vocab "$stage" "$basemodel" "$source_languages" "$target_languages"
+preprocess_reuse_vocab "$stage" "saves/$stage.vocab.pt"
+
+[[ ${freezeenc:-} ]] && extra_args=(-freeze_encoder) || extra_args=(-freeze_decoder)
+
+train_continue "$stage" "$model" "$config" "$basemodel" "${extra_args[@]}"
+
+onmt_average_models -m models/"$stage"/*.pt -o "models/${stage}_avg.pt"
+#evauate_bleu "$stage" "$src" "$tgt"
+dsets="test dev mtedx.test ted-ma flores" evauate_bleu "$stage" "$source_languages" "$target_languages"
