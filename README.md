@@ -14,7 +14,6 @@ Preparation:
 git clone https://github.com/cmullovisl/clwe-transfer
 cd clwe-transfer
 git submodules update --init --recursive --remote
-cp -r scripts/vocab onmt_vocab_utils
 chmod +x ./fastText/alignment/align.py
 ln -s ./fastText/alignment/align.py ./bin/fasttext_align
 pip install .
