@@ -21,6 +21,7 @@ stages:
   #  outs:
   #  - "./"
   download_embeddings:
+    desc: "Download the pre-trained fastText embeddings for the new language"
     cmd: download_embeddings "${newlanguage}"
     wdir: "embeddings/models"
     deps: []
@@ -29,6 +30,7 @@ stages:
     - "cc.${newlanguage}.${embdim}.bin"
 
   compute_alignments:
+    desc: "Compute alignment between new language and the pivot language"
     cmd: compute_alignments "${clwepivot}" "${newlanguage}"
     wdir: "embeddings"
     deps:
@@ -38,6 +40,7 @@ stages:
     - "align/aligned.${newlanguage}.vec-mat"
 
   extract_data:
+    desc: "Extract the new language data"
     cmd: extract_data "${newlanguage}"
     wdir: "data"
     deps:
@@ -48,6 +51,7 @@ stages:
     - "extracted/test.${newlanguage}"
 
   prepare_monolingual_data:
+    desc: "Prepare monolingual data for the new language. Used for building the embeddings, training an autoencoder, and back-translation."
     cmd: dsets="train dev" prepare_monolingual_data "${newlanguage}"
     wdir: "data"
     deps:
@@ -58,6 +62,7 @@ stages:
     - "monolingual/"
 
   build_embeddings:
+    desc: "Extract unique tokens from the monolingual corpora and build the embedding table for the new language (in .vec format)"
     cmd: build_embeddings "${newlanguage}"
     deps:
     #- "extract-words.py"
@@ -70,6 +75,7 @@ stages:
 
   # set_stage "blindenc"
   prepare_parallel_data:
+    desc: "Prepare the new language test data"
     foreach: ${baselanguages_list}
     do:
       cmd: prepare_parallel_data "test" "${item} ${newlanguage}"
@@ -84,6 +90,7 @@ stages:
       - "parallel/test.${newlanguage}-${item}.${item}"
 
   evauate_bleu_blindenc:
+    desc: "Evaluate zero-shot translation from the new language"
     foreach: ${baselanguages_list}
     do:
       cmd: ln -sf "${basemodel}" "models/blindenc_avg.pt" && evauate_bleu "blindenc" "${newlanguage}" "${item}"
@@ -102,6 +109,7 @@ stages:
       - "scores/blindenc/test.${newlanguage}-${item}.jsonl"
 
   evauate_bleu_blinddec:
+    desc: "Evaluate zero-shot translation into the new language"
     foreach: ${baselanguages_list}
     do:
       cmd: ln -sf "${basemodel}" "models/blinddec_avg.pt" && evauate_bleu "blinddec" "${baselanguages}" "${newlanguage}"
@@ -121,6 +129,7 @@ stages:
 
   # set_stage "autoencoder"
   build_newlang_vocab:
+    desc: "Build the (binarized) vocabulary for autoencoder training. Adds the new language token and replaces source/target words with the new language words. Also saves the word vectors inside the vocabulary."
     cmd: build_newlang_vocab "autoencoder" "${basemodel}" "${newlanguage}" "${newlanguage}"
     deps:
     - "${basemodel}"
@@ -130,6 +139,7 @@ stages:
     #- "saves/autoencoder.specials.pt"
 
   concat_autoencoding_corpus:
+    desc: "Prepare autoencoding data for training"
     cmd: concat_autoencoding_corpus "autoencoder" "${newlanguage}"
     wdir: "data"
     deps:
@@ -142,6 +152,7 @@ stages:
     - "corpus/dev.autoencoder.tgt"
 
   preprocess_reuse_vocab:
+    desc: "Preprocess while using the previously built vocabulary (see `build_newlang_vocab`)"
     cmd: preprocess_reuse_vocab "autoencoder" "saves/autoencoder.vocab.pt"
     deps:
     - "data/corpus/train.autoencoder.src"
@@ -153,6 +164,7 @@ stages:
     - "saves/autoencoder/"
 
   train_continue_autoencode:
+    desc: "Train on (denoising) autoencoding objective"
     cmd: train_continue "autoencoder" "${model}" "${autoencoderconfig}" "${basemodel}"
     deps:
     - "saves/autoencoder/"
@@ -163,6 +175,7 @@ stages:
     - "logs/autoencoder/"
 
   average_models_autoencode:
+    desc: "Average training checkpoints"
     cmd: onmt_average_models -m models/autoencoder/*.pt -o models/autoencoder_avg.pt
     deps:
     - "models/autoencoder/"
@@ -170,6 +183,7 @@ stages:
     - "models/autoencoder_avg.pt"
 
   evauate_bleu_autoencode:
+    desc: "Evaluate translation into the new language"
     foreach: ${baselanguages_list}
     do:
       cmd: evauate_bleu "autoencoder" "${item}" "${newlanguage}"
@@ -182,8 +196,11 @@ stages:
       - "scores/autoencoder/test.${item}-${newlanguage}.jsonl"
 
   backtranslation_round_round1:
+    desc: "Back-translate monolingual data to create synthetic parallel data and train on it"
     cmd: freezeenc=y backtranslation_round "${basemodel}" "${basemodel}" "${baselanguages}" "${newlanguage}" "bt1"
     deps:
+    - "data/monolingual/train.${newlanguage}"
+    - "data/monolingual/dev.${newlanguage}"
     # baselanguage embeddings should also be depended on
     - "data/embeddings/embeddings.${newlanguage}.vec"
     - "${basemodel}"
@@ -198,6 +215,7 @@ stages:
     - "logs/bt1/training.bt1.${model}.log"
 
   evauate_bleu_backtranslation_round1:
+    desc: "Evaluate back-translation round 1 (translation into the new language)"
     foreach: ${baselanguages_list}
     do:
       cmd: evauate_bleu "bt1" "${item}" "${newlanguage}"
@@ -211,8 +229,11 @@ stages:
       - "scores/bt1/test.${item}-${newlanguage}.jsonl"
 
   backtranslation_round_round2:
+    desc: "Back-translate monolingual data to create synthetic parallel data and train on it (reverse direction)"
     cmd: freezeenc= backtranslation_round "${basemodel}" "models/bt1_avg.pt" "${newlanguage}" "${baselanguages}" "bt2"
     deps:
+    - "data/monolingual/train.${newlanguage}"
+    - "data/monolingual/dev.${newlanguage}"
     # baselanguage embeddings should also be depended on
     - "data/embeddings/embeddings.${newlanguage}.vec"
     - "${basemodel}"
@@ -228,6 +249,7 @@ stages:
     - "logs/bt2/training.bt2.${model}.log"
 
   evauate_bleu_backtranslation_round2:
+    desc: "Evaluate back-translation round 2 (translation from the new language)"
     foreach: ${baselanguages_list}
     do:
       cmd: evauate_bleu "bt2" "${newlanguage}" "${item}"

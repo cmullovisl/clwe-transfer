@@ -15,6 +15,7 @@ stages:
   #  outs:
   #  - "embeddings/models/"
   download_embeddings:
+    desc: "Download the pre-trained fastText embeddings for our base languages"
     foreach: ${baselanguages_list}
     do:
       cmd: download_embeddings "${item}"
@@ -25,6 +26,7 @@ stages:
       - "cc.${item}.${embdim}.bin"
 
   compute_alignments:
+    desc: "Compute the alignments between each of the base languages and the chosen pivot"
     cmd: compute_alignments "${clwepivot}" "${baselanguages}"
     wdir: "embeddings"
     deps:
@@ -34,6 +36,7 @@ stages:
     - "align/"
 
   extract_data:
+    desc: "Extract the data TSVs from the data TAR archive and extract individual languages into separate files"
     cmd: extract_data "${baselanguages}"
     wdir: "data"
     deps:
@@ -42,6 +45,7 @@ stages:
     - "extracted/"
 
   prepare_parallel_data:
+    desc: "Prepare parallel data for each pair of base languages. We use this for training and evaluating the pre-trained model."
     cmd: prepare_parallel_data "train dev test" "${baselanguages}"
     wdir: "data"
     deps:
@@ -50,6 +54,7 @@ stages:
     - "parallel/"
 
   prepare_monolingual_data:
+    desc: "Prepare monolingual data for each base language. Only used for building the embeddings (see `build_embeddings` stage)"
     cmd: prepare_monolingual_data "${baselanguages}"
     wdir: "data"
     deps:
@@ -58,6 +63,7 @@ stages:
     - "monolingual/"
 
   generate_specials:
+    desc: "Generates random vectors for special vocabulary entries (<bland>, <unk>, ..., #en#, #de#, ...)"
     cmd: generate-specials.py "${embdim}" ${baselanguages} > "specials.vec"
     wdir: "data"
     deps: []
@@ -65,6 +71,7 @@ stages:
     - "specials.vec"
 
   build_embeddings:
+    desc: "Extract unique tokens from the monolingual corpora and build the embedding table for each language (in .vec format)"
     cmd: build_embeddings "${baselanguages}"
     deps:
     #- "extract-words.py"
@@ -75,6 +82,7 @@ stages:
     - "data/embeddings/"
 
   build_basesystem_embeddings:
+    desc: "Concatenate the embedding tables of each of the base languages"
     cmd: build_basesystem_embeddings "${baselanguages}"
     wdir: "data"
     deps:
@@ -86,6 +94,7 @@ stages:
     - "allembeddings/"
 
   concat_data:
+    desc: "Concatenate the parallel data to build our multilingual corpus"
     cmd: concat_data "${stage}" "${baselanguages}" "${baselanguages}"
     wdir: "data"
     deps:
@@ -94,6 +103,7 @@ stages:
     - "corpus/"
 
   preprocess:
+    desc: "Call `onmt_preprocess` to binarize the training corpus"
     cmd: preprocess "${stage}"
     deps:
     - "data/corpus/train.${stage}.src"
@@ -106,6 +116,7 @@ stages:
     - "saves/${stage}/"
 
   train:
+    desc: "Train the base model on supervised directions"
     cmd: train "${stage}" "${model}" "${baseconfig}"
     deps:
     - "saves/${stage}/"
@@ -115,6 +126,7 @@ stages:
     - "logs/${stage}/"
 
   average_models:
+    desc: "Average training checkpoints"
     cmd: onmt_average_models -m models/${stage}/*.pt -o models/${stage}_avg.pt
     deps:
     - "models/${stage}/"
@@ -122,6 +134,7 @@ stages:
     - "models/${stage}_avg.pt"
 
   evauate_bleu:
+    desc: "Evaluate translation scores on supervised directions"
     cmd: evauate_bleu "${stage}" "${baselanguages}" "${baselanguages}"
     deps:
     - "models/${stage}_avg.pt"
